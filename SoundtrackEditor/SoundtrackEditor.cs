@@ -35,6 +35,8 @@ namespace SoundtrackEditor
         {
             try
             {
+                LoadMp3s();
+
                 AudioClip clip = null;
                 string track = String.Empty;
                 unusedTracks.Clear();
@@ -195,6 +197,7 @@ namespace SoundtrackEditor
 
                 // Write out the current settings for future user editing.
                 Save();
+                LoadMp3s();
             }
             catch (Exception ex)
             {
@@ -268,42 +271,45 @@ namespace SoundtrackEditor
             }
         }
 
-        /*
-        static public string AssemblyDirectory
+        public static string AssemblyDirectory
         {
             // See: http://stackoverflow.com/questions/52797/how-do-i-get-the-path-of-the-assembly-the-code-is-in/283917#283917
             get
             {
-                string codeBase = Assembly.GetExecutingAssembly().CodeBase; // file:///E:/Games/Kerbal Space Program/GameData/SoundtrackEditor/SoundtrackEditor.dll
-                UriBuilder uri = new UriBuilder(codeBase); // file://E:/Games/Kerbal%20Space%20Program/GameData/SoundtrackEditor/SoundtrackEditor.dll
-                string path = Uri.UnescapeDataString(uri.Path); // E:/Games/Kerbal Space Program/GameData/SoundtrackEditor/SoundtrackEditor.dll
-                return Path.GetDirectoryName(path); // E:/Games/Kerbal Space Program/GameData/SoundtrackEditor
+                string codeBase = System.Reflection.Assembly.GetExecutingAssembly().CodeBase; // file:///E:/Games/Kerbal Space Program/GameData/SoundtrackEditor/Plugins/SoundtrackEditor.dll
+                UriBuilder uri = new UriBuilder(codeBase); // file://E:/Games/Kerbal%20Space%20Program/GameData/SoundtrackEditor/Plugins/SoundtrackEditor.dll
+                string path = Uri.UnescapeDataString(uri.Path); // E:/Games/Kerbal Space Program/GameData/SoundtrackEditor/Plugins/SoundtrackEditor.dll
+                return Path.GetDirectoryName(path); // E:/Games/Kerbal Space Program/GameData/SoundtrackEditor/Plugins
             }
         }
 
+        /// <summary>
+        /// Adds any MP3s in the SoundtrackEditory\Music\ directory to the GameDatabase.
+        /// </summary>
+        /// <remarks>
+        /// Unity no longer supports loading MP3 tracks, giving the error:
+        ///    "Streaming of 'mp3' on this platform is not supported"
+        /// Instead, this is achieved using the MPG123 utility to load the MP3 
+        /// data unto a Unity AudioClip. For details, see here:
+        /// http://answers.unity3d.com/questions/380838/is-there-any-converter-mp3-to-ogg-.html
+        /// </remarks>
         private void LoadMp3s()
         {
-            // Unity won't load MP3s. Message:
-            // Streaming of 'mp3' on this platform is not supported
-            string spacePath = AssemblyDirectory + "/Space";
-            string constructionPath = AssemblyDirectory.Replace('\\', '/') + "/Construction";
-            foreach (string path in new List<string>() { spacePath, constructionPath })
+            // Check all files in the Music directory; find the mp3s.
+            DirectoryInfo modDir = Directory.GetParent(AssemblyDirectory);
+            string path = modDir.FullName + @"\Music\";
+            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
             {
-                foreach (string file in Directory.GetFiles(path))
+                string ext = Path.GetExtension(file);
+                if (!String.IsNullOrEmpty(ext) && ext.Equals(".mp3", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    string f = file.Replace('\\', '/');
-                    if (!GameDatabase.Instance.ExistsAudioClip(Path.GetFileNameWithoutExtension(f)))
-                    {
-                        // MP3s aren't loaded into the game database.
-                        WWW temp = new WWW("file://" + f);
-                        Debug.Log("# URL: " + temp.url);
-                        AudioClip clip = temp.GetAudioClip(false, false, AudioType.MPEG);
-                        Debug.Log("# Clip: " + clip);
-                        music.spacePlaylist.Add(temp.GetAudioClip(false, false, AudioType.MPEG));
-                    }
+                    Debug.Log("STED: Running MP3 importer...");
+                    MP3Import importer = new MP3Import();
+                    GameDatabase.Instance.databaseAudio.Add(importer.StartImport(file));
+                    Debug.Log("STED: Finished importing MP3.");
                 }
             }
-        }*/
+        }
     }
 
     /*public class Soundtrack
