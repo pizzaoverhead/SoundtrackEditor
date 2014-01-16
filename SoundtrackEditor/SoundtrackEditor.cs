@@ -45,7 +45,6 @@ namespace SoundtrackEditor
                 if (config == null)
                 {
                     Debug.LogWarning("STED -- No config file present.");
-                    // TODO: The unusedTracks list is incorrect.
                     unusedTracks.AddRange(GetUserTrackNames());
                     Save();
                     return;
@@ -197,7 +196,6 @@ namespace SoundtrackEditor
 
                 // Write out the current settings for future user editing.
                 Save();
-                LoadMp3s();
             }
             catch (Exception ex)
             {
@@ -296,6 +294,7 @@ namespace SoundtrackEditor
         private void LoadMp3s()
         {
             // Check all files in the Music directory; find the mp3s.
+            Debug.Log("STED: Running MP3 importer...");
             DirectoryInfo modDir = Directory.GetParent(AssemblyDirectory);
             string path = modDir.FullName + @"\Music\";
             foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
@@ -303,12 +302,21 @@ namespace SoundtrackEditor
                 string ext = Path.GetExtension(file);
                 if (!String.IsNullOrEmpty(ext) && ext.Equals(".mp3", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    Debug.Log("STED: Running MP3 importer...");
                     MP3Import importer = new MP3Import();
-                    GameDatabase.Instance.databaseAudio.Add(importer.StartImport(file));
-                    Debug.Log("STED: Finished importing MP3.");
+                    AudioClip clip = importer.StartImport(file);
+
+                    // Set the clip name to match the format used for clips in the GameDatabase.
+                    string clipShortPath = Path.GetFileName(modDir.FullName) +
+                        file.Substring(modDir.FullName.Length, file.Length - modDir.FullName.Length - ".mp3".Length);
+                    if (Path.DirectorySeparatorChar == '\\') // Don't un-escape characters in non-Windows environments.
+                        clipShortPath = clipShortPath.Replace('\\', '/');
+
+
+                    clip.name = clipShortPath;
+                    GameDatabase.Instance.databaseAudio.Add(clip);
                 }
             }
+            Debug.Log("STED: Finished importing MP3s.");
         }
     }
 
