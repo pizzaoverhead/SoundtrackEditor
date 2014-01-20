@@ -63,8 +63,6 @@ public class MP3Import
         }
 
         MPGImport.mpg123_close(handle_mpg);
-
-        Debug.Log("STED: Importer finished.");
         return myClip;
     }
 

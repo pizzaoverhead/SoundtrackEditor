@@ -15,7 +15,8 @@ namespace SoundtrackEditor
         ConfigNode config;
         string configSavePath = "GameData/SoundtrackEditor/settings.cfg";
         List<string> unusedTracks = new List<string>();
-
+        // Create a new empty audio clip to replace the stock ones when they are disabled.
+        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false, true);
 
         public void Start()
         {
@@ -72,14 +73,18 @@ namespace SoundtrackEditor
                     if (spaceTracks.Length > 0)
                     {
                         music.spacePlaylist.Clear();
-                        foreach (string t in spaceTracks)
+
+                        if (spaceTracks.Length != 1 &&
+                            !spaceTracks[0].Equals("none", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            clip = GameDatabase.Instance.GetAudioClip(t);
-                            if (clip != null)
+                            foreach (string t in spaceTracks)
                             {
-                                Debug.Log("STED: Adding space track " + clip.name);
-                                music.spacePlaylist.Add(clip);
-                                unusedTracks.Remove(clip.name);
+                                clip = GameDatabase.Instance.GetAudioClip(t);
+                                if (clip != null)
+                                {
+                                    music.spacePlaylist.Add(clip);
+                                    unusedTracks.Remove(clip.name);
+                                }
                             }
                         }
                     }
@@ -91,13 +96,18 @@ namespace SoundtrackEditor
                     if (constructionTracks.Length > 0)
                     {
                         music.constructionPlaylist.Clear();
-                        foreach (string t in constructionTracks)
+
+                        if (constructionTracks.Length != 1 &&
+                            !constructionTracks[0].Equals("none", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            clip = GameDatabase.Instance.GetAudioClip(t);
-                            if (clip != null)
+                            foreach (string t in constructionTracks)
                             {
-                                music.constructionPlaylist.Add(clip);
-                                unusedTracks.Remove(clip.name);
+                                clip = GameDatabase.Instance.GetAudioClip(t);
+                                if (clip != null)
+                                {
+                                    music.constructionPlaylist.Add(clip);
+                                    unusedTracks.Remove(clip.name);
+                                }
                             }
                         }
                     }
@@ -106,91 +116,136 @@ namespace SoundtrackEditor
                 if (config.HasValue("astroComplexAmbience"))
                 {
                     track = config.GetValue("astroComplexAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.astroComplexAmbience = emptyTrack;
+                    else
                     {
-                        music.astroComplexAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.astroComplexAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("credits"))
                 {
                     track = config.GetValue("credits");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.credits = emptyTrack;
+                    else
                     {
-                        music.credits = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.credits = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("menuAmbience"))
                 {
                     track = config.GetValue("menuAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.menuAmbience = emptyTrack;
+                    else
                     {
-                        music.menuAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.menuAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("menuTheme"))
                 {
                     track = config.GetValue("menuTheme");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.menuTheme = emptyTrack;
+                    else
                     {
-                        music.menuTheme = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.menuTheme = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("researchComplexAmbience"))
                 {
                     track = config.GetValue("researchComplexAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.researchComplexAmbience = emptyTrack;
+                    else
                     {
-                        music.researchComplexAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.researchComplexAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("spaceCenterAmbience"))
                 {
                     track = config.GetValue("spaceCenterAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.spaceCenterAmbience = emptyTrack;
+                    else
                     {
-                        music.spaceCenterAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.spaceCenterAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("SPHAmbience"))
                 {
                     track = config.GetValue("SPHAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.SPHAmbience = emptyTrack;
+                    else
                     {
-                        music.SPHAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.SPHAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("trackingAmbience"))
                 {
                     track = config.GetValue("trackingAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.trackingAmbience = emptyTrack;
+                    else
                     {
-                        music.trackingAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.trackingAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
                 if (config.HasValue("VABAmbience"))
                 {
                     track = config.GetValue("VABAmbience");
-                    clip = GameDatabase.Instance.GetAudioClip(track);
-                    if (clip != null)
+                    if (track.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        music.VABAmbience = emptyTrack;
+                    else
                     {
-                        music.VABAmbience = clip;
-                        unusedTracks.Remove(clip.name);
+                        clip = GameDatabase.Instance.GetAudioClip(track);
+                        if (clip != null)
+                        {
+                            music.VABAmbience = clip;
+                            unusedTracks.Remove(clip.name);
+                        }
                     }
                 }
 
@@ -199,41 +254,110 @@ namespace SoundtrackEditor
             }
             catch (Exception ex)
             {
-                Debug.LogError("STED error: " + ex.Message);
+                Debug.LogError("STED Load error: " + ex.Message);
             }
         }
 
         private void Save()
         {
-            config = new ConfigNode();
-            ConfigNode spacePlaylist = new ConfigNode("SpacePlaylist");
-            for (int i = 0; i < music.spacePlaylist.Count; i++)
+            try
             {
-                spacePlaylist.AddValue("track", music.spacePlaylist[i].name);
+                config = new ConfigNode();
+
+                ConfigNode spacePlaylist = new ConfigNode("SpacePlaylist");
+                if (music.spacePlaylist.Count > 0)
+                {
+                    for (int i = 0; i < music.spacePlaylist.Count; i++)
+                    {
+                        spacePlaylist.AddValue("track", music.spacePlaylist[i].name);
+                    }
+                }
+                else
+                    spacePlaylist.AddValue("track", "none");
+                config.AddNode(spacePlaylist);
+
+                ConfigNode constructionPlaylist = new ConfigNode("ConstructionPlaylist");
+                if (music.constructionPlaylist.Count > 0)
+                {
+                    for (int i = 0; i < music.constructionPlaylist.Count; i++)
+                    {
+                        constructionPlaylist.AddValue("track", music.constructionPlaylist[i].name);
+                    }
+                }
+                else
+                    constructionPlaylist.AddValue("track", "none");
+                config.AddNode(constructionPlaylist);
+
+                // Set the track names, or return "none" if they are null.
+                string trackName = String.Empty;
+                if (music.astroComplexAmbience != null)
+                    trackName = music.astroComplexAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("astroComplexAmbience", trackName);
+
+                if (music.credits != null)
+                    trackName = music.credits.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("credits", trackName);
+
+                if (music.menuAmbience != null)
+                    trackName = music.menuAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("menuAmbience", trackName);
+
+                if (music.menuTheme != null)
+                    trackName = music.menuTheme.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("menuTheme", trackName);
+
+                if (music.researchComplexAmbience != null)
+                    trackName = music.researchComplexAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("researchComplexAmbience", trackName);
+
+                if (music.spaceCenterAmbience != null)
+                    trackName = music.spaceCenterAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("spaceCenterAmbience", trackName);
+
+                if (music.SPHAmbience != null)
+                    trackName = music.SPHAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("SPHAmbience", trackName);
+
+                if (music.trackingAmbience != null)
+                    trackName = music.trackingAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("trackingAmbience", trackName);
+
+                if (music.VABAmbience != null)
+                    trackName = music.VABAmbience.name ?? "none";
+                else
+                    trackName = "none";
+                config.AddValue("VABAmbience", trackName);
+
+                ConfigNode unusedTrackNode = new ConfigNode("UnusedTracks");
+                foreach (string t in unusedTracks)
+                {
+                    if (!t.Equals("none", StringComparison.InvariantCultureIgnoreCase))
+                        unusedTrackNode.AddValue("track", t);
+                }
+                config.AddNode(unusedTrackNode);
+
+                config.Save(configSavePath);
             }
-            config.AddNode(spacePlaylist);
-            ConfigNode constructionPlaylist = new ConfigNode("ConstructionPlaylist");
-            for (int i = 0; i < music.constructionPlaylist.Count; i++)
+            catch (Exception ex)
             {
-                constructionPlaylist.AddValue("track", music.constructionPlaylist[i].name);
+                Debug.LogError("STED Save error: " + ex.Message);
             }
-            config.AddNode(constructionPlaylist);
-            config.AddValue("astroComplexAmbience", music.astroComplexAmbience.name);
-            config.AddValue("credits", music.credits.name);
-            config.AddValue("menuAmbience", music.menuAmbience.name);
-            config.AddValue("menuTheme", music.menuTheme.name);
-            config.AddValue("researchComplexAmbience", music.researchComplexAmbience.name);
-            config.AddValue("spaceCenterAmbience", music.spaceCenterAmbience.name);
-            config.AddValue("SPHAmbience", music.SPHAmbience.name);
-            config.AddValue("trackingAmbience", music.trackingAmbience.name);
-            config.AddValue("VABAmbience", music.VABAmbience.name);
-
-            ConfigNode unusedTrackNode = new ConfigNode("UnusedTracks");
-            foreach (string t in unusedTracks)
-                unusedTrackNode.AddValue("track", t);
-            config.AddNode(unusedTrackNode);
-
-            config.Save(configSavePath);
         }
 
         private List<string> GetUserTrackNames()
@@ -263,9 +387,18 @@ namespace SoundtrackEditor
 
         private void UnloadUnusedTracks()
         {
-            foreach (string trackName in unusedTracks)
+            try
             {
-                GameDatabase.Instance.RemoveAudioClip(trackName);
+                foreach (string trackName in unusedTracks)
+                {
+                    GameDatabase.Instance.RemoveAudioClip(trackName);
+                }
+
+                Resources.UnloadUnusedAssets();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("STED Unload Tracks error: " + ex.Message);
             }
         }
 
@@ -293,30 +426,37 @@ namespace SoundtrackEditor
         /// </remarks>
         private void LoadMp3s()
         {
-            // Check all files in the Music directory; find the mp3s.
-            Debug.Log("STED: Running MP3 importer...");
-            DirectoryInfo modDir = Directory.GetParent(AssemblyDirectory);
-            string path = modDir.FullName + @"\Music\";
-            foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
+            try
             {
-                string ext = Path.GetExtension(file);
-                if (!String.IsNullOrEmpty(ext) && ext.Equals(".mp3", StringComparison.InvariantCultureIgnoreCase))
+                // Check all files in the Music directory; find the mp3s.
+                Debug.Log("STED: Running MP3 importer...");
+                DirectoryInfo modDir = Directory.GetParent(AssemblyDirectory);
+                string path = Path.Combine(modDir.FullName, "Music") + Path.DirectorySeparatorChar;
+                foreach (string file in Directory.GetFiles(path, "*", SearchOption.AllDirectories))
                 {
-                    MP3Import importer = new MP3Import();
-                    AudioClip clip = importer.StartImport(file);
+                    string ext = Path.GetExtension(file);
+                    if (!String.IsNullOrEmpty(ext) && ext.Equals(".mp3", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        MP3Import importer = new MP3Import();
+                        AudioClip clip = importer.StartImport(file);
 
-                    // Set the clip name to match the format used for clips in the GameDatabase.
-                    string clipShortPath = Path.GetFileName(modDir.FullName) +
-                        file.Substring(modDir.FullName.Length, file.Length - modDir.FullName.Length - ".mp3".Length);
-                    if (Path.DirectorySeparatorChar == '\\') // Don't un-escape characters in non-Windows environments.
-                        clipShortPath = clipShortPath.Replace('\\', '/');
+                        // Set the clip name to match the format used for clips in the GameDatabase.
+                        string clipShortPath = Path.GetFileName(modDir.FullName) +
+                            file.Substring(modDir.FullName.Length, file.Length - modDir.FullName.Length - ".mp3".Length);
+                        if (Path.DirectorySeparatorChar == '\\') // Change Windows path separators to match the GameDatabase.
+                            clipShortPath = clipShortPath.Replace('\\', '/');
 
 
-                    clip.name = clipShortPath;
-                    GameDatabase.Instance.databaseAudio.Add(clip);
+                        clip.name = clipShortPath;
+                        GameDatabase.Instance.databaseAudio.Add(clip);
+                    }
                 }
+                Debug.Log("STED: Finished importing MP3s.");
             }
-            Debug.Log("STED: Finished importing MP3s.");
+            catch (Exception ex)
+            {
+                Debug.LogError("STED MP3 Import error: " + ex.Message);
+            }
         }
     }
 
