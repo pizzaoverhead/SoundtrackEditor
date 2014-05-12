@@ -30,6 +30,8 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <DocumentationFile>
+    </DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -48,6 +50,7 @@
   <ItemGroup>
     <Compile Include="MP3Import.cs" />
     <Compile Include="MPGImport.cs" />
+    <Compile Include="Playlist.cs" />
     <Compile Include="SoundtrackEditor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

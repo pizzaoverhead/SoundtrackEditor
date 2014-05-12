@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
+using System.Text;
 
 public class MP3Import
 {
@@ -44,11 +45,23 @@ public class MP3Import
         MPGImport.mpg123_format_none(handle_mpg);
         MPGImport.mpg123_format(handle_mpg, intRate, intChannels, 208);
 
+		Debug.Log("Getting ID3 info");
+		MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
+		//MPGImport.mpg123_id3v2 v2 = (MPGImport.mpg123_id3v2)Marshal.PtrToStructure(id3v2, typeof(MPGImport.mpg123_id3v2));
+		Debug.Log(new String(v1.album));	// "Runnin' Wild"
+		Debug.Log(new String(v1.artist));	// "Airbourne"
+		Debug.Log(new String(v1.title));	// "Stand Up For Rock N Roll"
+		Debug.Log(new String(v1.year));		// "2007"
+		Debug.Log(v1.genre);				// 17
+		Debug.Log(new String(v1.comment));	// "Ripped By Kotton"
+		Debug.Log(new String(v1.tag));		// "TAG"
+
+
         FrameSize = MPGImport.mpg123_outblock(handle_mpg);
         byte[] Buffer = new byte[FrameSize];
         lengthSamples = MPGImport.mpg123_length(handle_mpg);
 
-        myClip = AudioClip.Create("myClip", lengthSamples, intChannels, intRate, false, false);
+        myClip = AudioClip.Create(new String(v1.title), lengthSamples, intChannels, intRate, false, false);
 
         int importIndex = 0;
 
