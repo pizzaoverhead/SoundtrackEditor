@@ -16,7 +16,7 @@ namespace SoundtrackEditor
         string configSavePath = "GameData/SoundtrackEditor/settings.cfg";
         List<string> unusedTracks = new List<string>();
         // Create a new empty audio clip to replace the stock ones when they are disabled.
-        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false, true);
+        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, true);
 
         public void Start()
         {
@@ -26,9 +26,9 @@ namespace SoundtrackEditor
             UnloadUnusedTracks();
 
             // Remove positional effects.
-            music.audio1.panLevel = 0;
+            //music.audio1.panLevel = 0;
             music.audio1.dopplerLevel = 0;
-            music.audio2.panLevel = 0;
+            //music.audio2.panLevel = 0;
             music.audio2.dopplerLevel = 0;
         }
 
