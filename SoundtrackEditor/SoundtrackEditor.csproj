@@ -35,6 +35,10 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>..\3rd party binaries\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="KSPUtil, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>bin\Debug\KSPUtil.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
