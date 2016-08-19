@@ -19,7 +19,7 @@ namespace SoundtrackEditor
 
         // GUI visibility toggles.
         private static bool _allUIHidden = false;
-        private bool _mainWindowVisible = true; // TODO: Persist this value for startup
+        private bool _mainWindowVisible = false; // TODO: Persist this value for startup
         private bool _situationVisible = false;
         private bool _playbackControlsVisible = false;
         private bool _playlistGuiVisible = false;
@@ -178,7 +178,7 @@ namespace SoundtrackEditor
 
                 Vessel v = Utils.GetNearestVessel();
                 if (v != null)
-                    Debug.Log("Nearest vessel: " + v);
+                    GUILayout.Label("Nearest vessel: " + v);
 
                 if (sted.LoadingClip != null)
                     GUILayout.Label("Preloading track " + sted.LoadingClip.name);
@@ -353,6 +353,15 @@ NullReferenceException: Object reference not set to an instance of an object
             GUILayout.EndHorizontal();
 
             //
+            // Volume control
+            //
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("0%");
+            GameSettings.MUSIC_VOLUME = GUILayout.HorizontalSlider(GameSettings.MUSIC_VOLUME, 0, 1);
+            GUILayout.Label("100%");
+            GUILayout.EndHorizontal();
+
+            //
             // Mute and Tracks buttons
             //
             GUILayout.BeginHorizontal();
@@ -366,7 +375,6 @@ NullReferenceException: Object reference not set to an instance of an object
                     resizeWindow = true;
                 _playerTracksExpanded = !_playerTracksExpanded;
             }
-
             GUILayout.EndHorizontal();
 
             //
@@ -662,6 +670,10 @@ NullReferenceException: Object reference not set to an instance of an object
             _editingPlaylist.shuffle = GUILayout.Toggle(_editingPlaylist.shuffle, "Shuffle");
             _editingPlaylist.pauseOnGamePause = GUILayout.Toggle(_editingPlaylist.pauseOnGamePause, "Pause On Game Pause");
             _editingPlaylist.disableAfterPlay = GUILayout.Toggle(_editingPlaylist.disableAfterPlay, "Disable Once Played");
+
+            // Not yet implemented.
+            //FadeEditor();
+
             // Play Next
             PlayNextPicker();
             PlayBeforePicker();
@@ -789,9 +801,20 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             if (GUILayout.Button(" Cancel "))
             {
-                _editorGuiVisible = false;
-                _trackPickerVisible = false;
                 _playlistGuiVisible = true;
+
+                _editorGuiVisible = false;
+                // Collapse sub-components.
+                _scenesExpanded = false;
+                _cameraModeExpanded = false;
+                _situationExpanded = false;
+                _timeOfDayExpanded = false;
+                _inAtmosphereExpanded = false;
+                _fadeEditorVisible = false;
+                _trackPickerVisible = false;
+                _playNextPickerVisible = false;
+                _playBeforePickerVisible = false;
+                _playAfterPickerVisible = false;
             }
             GUILayout.EndHorizontal(); // Buttons
             GUILayout.EndVertical(); // Footer
@@ -1013,6 +1036,55 @@ NullReferenceException: Object reference not set to an instance of an object
                 _inAtmosphereExpanded = PickerGuiCollapsed("In Atmosphere", _inAtmosphereExpanded);
         }
 
+
+        private bool _fadeEditorVisible = false;
+        private bool _crossfade = false;
+        private float _fadeIn = 0;
+        private float _fadeOut = 0;
+        private void FadeEditor()
+        {
+            if (_fadeEditorVisible)
+            {
+                GUILayout.Label("<b>Fading</b>");
+                GUILayout.BeginVertical();
+                _fadeIn = GuiUtils.editFloat("Fade in time (s):", _fadeIn);
+                _fadeOut = GuiUtils.editFloat("Fade out time (s):", _fadeOut);
+                _crossfade = GUILayout.Toggle(_crossfade, "Crossfade");
+
+                // Footer
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button(" OK "))
+                {
+                    _editingPlaylist.fade.crossfade = _crossfade;
+                    _editingPlaylist.fade.fadeIn = _fadeIn;
+                    _editingPlaylist.fade.fadeOut = _fadeOut;
+                    _fadeEditorVisible = false;
+                }
+                if (GUILayout.Button("Cancel"))
+                {
+                    _fadeEditorVisible = false;
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.Space(10);
+                GUILayout.EndVertical();
+            }
+            else
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Fading");
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("  ...  "))
+                {
+                    _fadeEditorVisible = true;
+                    _crossfade = _editingPlaylist.fade.crossfade;
+                    _fadeIn = _editingPlaylist.fade.fadeIn;
+                    _fadeOut = _editingPlaylist.fade.fadeOut;
+                }
+                GUILayout.EndHorizontal();
+            }
+        }
+
         private bool _trackPickerVisible = false;
         private void TrackPicker()
         {
@@ -1129,6 +1201,8 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
+            if (GUILayout.Button("   Cancel  "))
+                isVisible = false;
             if (GUILayout.Button("   None  "))
             {
                 _chosenPlaylist = null;

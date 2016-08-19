@@ -42,7 +42,7 @@ namespace SoundtrackEditor
                         case ".MP3":
                             return LoadMp3Clip(file);
                         default:
-                            Utils.Log("Unknown extension found:" + ext);
+                            Utils.Log("Unknown extension found: " + ext);
                             break;
                     }
                 }

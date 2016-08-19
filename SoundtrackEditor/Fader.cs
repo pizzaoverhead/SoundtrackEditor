@@ -85,6 +85,7 @@ namespace SoundtrackEditor
 
         private bool _wasFadingOut = false;
         private bool _wasFadingIn = false;
+        // TODO: This now fades poorly, and interferes with the Player GUI volume control.
         public void Fade()
         {
             float time = Time.realtimeSinceStartup;

@@ -58,12 +58,16 @@ namespace SoundtrackEditor
                             p.channel = int.Parse(node.GetValue("channel"));
                         if (node.HasValue("preloadTime"))
                             p.preloadTime = float.Parse(node.GetValue("preloadTime"));
-                        if (node.HasValue("fade"))
+
+                        /* Not yet implemented.
+                        if (node.HasNode("fade"))
                         {
                             p.fade = new Playlist.Fade();
                             ConfigNode fade = node.GetNode("fade");
                             if (fade.HasNode("fadeIn"))
+                            {
                                 p.fade.fadeIn = float.Parse(node.GetValue("fadeIn"));
+                            }
                             if (fade.HasNode("fadeOut"))
                                 p.fade.fadeOut = float.Parse(node.GetValue("fadeOut"));
                             if (fade.HasNode("crossfade"))
@@ -79,7 +83,7 @@ namespace SoundtrackEditor
                                 p.trackFade.fadeOut = float.Parse(node.GetValue("fadeOut"));
                             if (trackFade.HasNode("crossfade"))
                                 p.trackFade.crossfade = bool.Parse(node.GetValue("crossfade"));
-                        }
+                        }*/
 
                         if (node.HasNode("tracks"))
                         {
@@ -432,6 +436,7 @@ namespace SoundtrackEditor
                         n.AddValue("channel", pl.channel);
                     n.AddValue("preloadTime", pl.preloadTime);
 
+                    /* Not yet implemented.
                     ConfigNode fade = n.AddNode("fade");
                     fade.AddValue("fadeIn", pl.fade.fadeIn);
                     fade.AddValue("fadeOut", pl.fade.fadeOut);
@@ -439,7 +444,7 @@ namespace SoundtrackEditor
                     ConfigNode trackFade = n.AddNode("trackFade");
                     trackFade.AddValue("fadeIn", pl.trackFade.fadeIn);
                     trackFade.AddValue("fadeOut", pl.trackFade.fadeOut);
-                    trackFade.AddValue("crossfade", pl.trackFade.crossfade);
+                    trackFade.AddValue("crossfade", pl.trackFade.crossfade);*/
 
                     ConfigNode trackNode = n.AddNode("tracks");
                     foreach (string trackName in pl.tracks)

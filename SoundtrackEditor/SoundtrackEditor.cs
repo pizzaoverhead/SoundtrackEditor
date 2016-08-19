@@ -245,7 +245,7 @@ namespace SoundtrackEditor
 
                 if (CurrentPlaylist != null && CurrentPlaylist.tracks.Count > 0)
                 {
-                    Utils.Log("Loading initial track");
+                    //Utils.Log("Loading initial track");
                     PlayNextTrack(CurrentPlaylist);
                 }
             }
@@ -253,7 +253,7 @@ namespace SoundtrackEditor
             {
                 if (Speaker.clip.loadState != AudioDataLoadState.Loaded)
                 {
-                    Utils.Log("Loading...");
+                    //Utils.Log("Loading...");
                     _loading = true;
                 }
                 else
@@ -285,7 +285,7 @@ namespace SoundtrackEditor
             if (!ActivePlaylists.Equals(CurrentPlaylist))
             {
                 CurrentPlaylist = ActivePlaylists[0];
-                Utils.Log("Switching to playlist " + ActivePlaylists[0].name + " of " + ActivePlaylists.Count + " matching playlists.");
+                //Utils.Log("Switching to playlist " + ActivePlaylists[0].name + " of " + ActivePlaylists.Count + " matching playlists.");
                 SwitchToPlaylist(ActivePlaylists[0]);
             }
         }
@@ -341,8 +341,8 @@ namespace SoundtrackEditor
                     /*else
                         Utils.Log("Playlist " + p.name + " failed prereqs");*/
                 }
-                else
-                    Utils.Log("Playlist " + p.name + " is disabled");
+                /*else
+                    Utils.Log("Playlist " + p.name + " is disabled");*/
             }
 
             // TODO: Select an appropriate playlist.
@@ -589,7 +589,7 @@ namespace SoundtrackEditor
             preloadTimer.Stop();
             if (CurrentPlaylist.trackIndex + 1 < CurrentPlaylist.tracks.Count)
             {
-                Utils.Log("Beginning preload");
+                //Utils.Log("Beginning preload");
                 PreloadClip = AudioLoader.GetAudioClip(CurrentPlaylist.tracks[CurrentPlaylist.trackIndex + 1]);
             }
         }
