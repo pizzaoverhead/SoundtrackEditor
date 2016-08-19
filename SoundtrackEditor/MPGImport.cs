@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 public class MPGImport
 {
-    const string Mpg123Dll = @"libmpg123-0";
+    public const string Mpg123Dll = @"libmpg123-0";
 
     #region enums
     public enum mpg123_parms

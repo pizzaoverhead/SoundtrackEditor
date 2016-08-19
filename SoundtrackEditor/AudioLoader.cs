@@ -33,7 +33,7 @@ namespace SoundtrackEditor
                 if (name.Equals(Path.GetFileNameWithoutExtension(file)))
                 {
                     string ext = Path.GetExtension(file);
-                    Utils.Log("Found " + name + ", with extension" + ext);
+                    Utils.Log("Found " + name + ", with extension " + ext);
                     switch (ext.ToUpperInvariant())
                     {
                         case ".WAV":
@@ -42,38 +42,75 @@ namespace SoundtrackEditor
                         case ".MP3":
                             return LoadMp3Clip(file);
                         default:
-                            Utils.Log("#Unknown extension found:" + ext);
+                            Utils.Log("Unknown extension found:" + ext);
                             break;
                     }
                 }
             }
             // Failed to find the clip in the music folder. Check the game database instead.
             Utils.Log("Attempting to load game database file: " + name);
-            foreach (var a in GameDatabase.Instance.databaseAudio)
+            /*foreach (var a in GameDatabase.Instance.databaseAudio)
             {
                 Debug.Log("DBA: " + a.name);
-            }
+            }*/
             return GameDatabase.Instance.GetAudioClip(name);
+        }
+
+        public static List<AudioFileInfo> GetAvailableFiles()
+        {
+            List<AudioFileInfo> files = new List<AudioFileInfo>();
+
+            // Ensure the Music directory exists.
+            Directory.CreateDirectory(Utils.MusicPath);
+
+            foreach (string file in Directory.GetFiles(Utils.MusicPath, "*", SearchOption.AllDirectories))
+            {
+                AudioFileInfo fileInfo = new AudioFileInfo
+                {
+                    Name = Path.GetFileNameWithoutExtension(file),
+                    Path = file,
+                    FileExtension = Path.GetExtension(file)
+                };
+                files.Add(fileInfo);
+            }
+            return files;
         }
 
         private static AudioClip LoadUnityAudioClip(string filePath)
         {
-            Utils.Log("Loading Unity clip");
-            // Load the audio clip into memory.
-            WWW www = new WWW("file://" + filePath);
-            AudioClip clip = www.audioClip;
-            clip.name = Path.GetFileNameWithoutExtension(filePath);
-            Utils.Log("Clip name: " + clip.name + ", ready: " + clip.isReadyToPlay);
-            return clip;
+            try
+            {
+                Utils.Log("Loading Unity clip");
+                // Load the audio clip into memory.
+                WWW www = new WWW("file://" + filePath);
+                AudioClip clip = www.audioClip;
+                clip.name = Path.GetFileNameWithoutExtension(filePath);
+                Utils.Log("Clip name: " + clip.name + ", load state: " + clip.loadState);
+                return clip;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("[STED] Error loading audio file " + filePath + ": " + ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
         }
 
         private static AudioClip LoadMp3Clip(string filePath)
         {
-            Utils.Log("Loading MP3 clip");
-            MP3Import importer = new MP3Import();
-            AudioClip clip = importer.StartImport(filePath);
-            clip.name = Path.GetFileNameWithoutExtension(filePath);
-            return clip;
+            try
+            {
+                Utils.Log("Loading MP3 clip");
+                MP3Import importer = new MP3Import();
+                AudioClip clip = importer.StartImport(filePath);
+                clip.name = Path.GetFileNameWithoutExtension(filePath);
+                return clip;
+            }
+            catch (Exception ex)
+            {
+                // TODO: Don't continually attempt to load failing tracks when they're the only one in the playlist.
+                Debug.LogError("[STED] Error loading MP3 " + filePath + ": " + ex.Message + "\r\n" + ex.StackTrace);
+                return null;
+            }
         }
 
         private void UnloadUnusedTracks()
@@ -97,6 +134,13 @@ namespace SoundtrackEditor
             {
                 Debug.LogError("[STED] Unload Tracks error: " + ex.Message);
             }
+        }
+
+        public struct AudioFileInfo
+        {
+            public string Name;
+            public string Path;
+            public string FileExtension;
         }
 
         /*// <summary>

@@ -22,7 +22,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.MainMenu
+                    scene = Enums.Scenes.MainMenu
                 }
             });
 
@@ -37,7 +37,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.SpaceCentre
+                    scene = Enums.Scenes.SpaceCentre
                 }
             });
 
@@ -62,7 +62,7 @@ namespace SoundtrackEditor
             spaceCenterAmbience = SoundtrackEditor/Music/dobroide-forest
             SPHAmbience = KSP_SPHAmbience
             trackingAmbience = KSP_TrackingStation
-            VABAmbience = KSP_VABAmbience*/
+            VABAmbience = KSP_VABAmbience* /
 
 
             Playlists.Add(new Playlist

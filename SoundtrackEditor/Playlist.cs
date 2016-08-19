@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using System.Diagnostics;
 
 namespace SoundtrackEditor
 {
@@ -14,26 +15,79 @@ namespace SoundtrackEditor
         // Skip / temporarily quieten / silence the current audio and play this track.
     }
 
-
+    [DebuggerDisplay("Name = {name}")] // Show the playlist name instead of "SoundtrackEditor.Playlist" in Watch windows when debugging.
     public class Playlist
     {
-        public string name = "NewPlaylist";
+        public string name = "New Playlist 1";
         public bool enabled = true;
         public Prerequisites playWhen;
         public bool loop = true;
         public bool shuffle = false;
+        public bool pauseOnGamePause = true;
         public bool disableAfterPlay = false; // Play once
-        public string playNext = String.Empty;
-        public List<string> tracks = new List<string>();
+        public string playNext = String.Empty; // Playlist to play after this one
+        public string playBefore = String.Empty; // Playlist that this playlist should be played before.
+        public string playAfter = String.Empty; // Playlist that this playlist should be played after.
+
+        public List<string> tracks = new List<string>(); // TODO: Full path? Duplicates!
         public int channel = 0; // TODO
         public Fade fade = new Fade();
         public Fade trackFade = new Fade();
         public float preloadTime = 5;
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // TODO: Make sure any new fields are added to Equals, the CTOR and the persistor.
+        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        // public bool noInteruptions = false; // Play this playlist until it ends, no switching.
+        // public bool noMerging = false; // Disallow other playlists from being mixed with this one
         // public bool warpMusic = false;
         // public string preloadThisPlaylistOnCompletion;
-        // TODO: Make sure any new fields are added to Equals.
+        // Resume from last playback position?
+        // Has docking target?
+        // KSC building levels?
 
-        // TODO: Allow overrides: "Disallow other playlists from being mixed with this one"
+        public Playlist()
+        {
+            name = GetNewPlaylistName();
+            playWhen = new Prerequisites();
+        }
+
+        public Playlist(Playlist p)
+        {
+            name = p.name;
+            enabled = p.enabled;
+            playWhen = new Prerequisites(p.playWhen);
+            loop = p.loop;
+            shuffle = p.shuffle;
+            pauseOnGamePause = p.pauseOnGamePause;
+            disableAfterPlay = p.disableAfterPlay;
+            playNext = p.playNext;
+            playBefore = p.playBefore;
+            playAfter = p.playAfter;
+            tracks = new List<string>(p.tracks);
+            channel = p.channel;
+            fade = new Fade(p.fade);
+            trackFade = new Fade(p.trackFade);
+            preloadTime = p.preloadTime;
+        }
+
+        public static string GetNewPlaylistName()
+        {
+            int num = 1;
+            string playlistName = "New Playlist " + num;
+            SoundtrackEditor sted = SoundtrackEditor.Instance;
+            if (sted == null || sted.Playlists == null)
+                return playlistName;
+            for (int i = 0; i < sted.Playlists.Count; i++)
+            {
+                if (sted.Playlists[i].name == playlistName)
+                {
+                    num++;
+                    playlistName = "New Playlist " + num;
+                    i = 0;
+                }
+            }
+            return playlistName;
+        }
 
         internal int trackIndex = -1;
 
@@ -69,6 +123,14 @@ namespace SoundtrackEditor
             public float fadeIn = 0;
             public float fadeOut = 0;
             public bool crossfade = false;
+
+            public Fade() {}
+            public Fade(Fade f)
+            {
+                fadeIn = f.fadeIn;
+                fadeOut = f.fadeOut;
+                crossfade = f.crossfade;
+            }
 
             #region Equality Operator
             public override bool Equals(System.Object obj)
@@ -115,32 +177,46 @@ namespace SoundtrackEditor
 
         public class Prerequisites
         {
-            // Need to be able to OR these in the cfg.
-            public Enums.Scene scene = Enums.Scene.Any;
+            public Enums.Scenes scene = Enums.Scenes.Any;
 
             // TODO: Make this an OR'd list.
-            public string bodyName = String.Empty;
-            public CelestialBody body
+            public string bodyName = string.Empty;
+
+            public Enums.Selector paused = Enums.Selector.Either;
+
+            public Vessel.Situations situation = Enums.AnyVesselSituation;
+            public Enums.CameraModes cameraMode = Enums.CameraModes.Any;
+            public Enums.Selector inAtmosphere = Enums.Selector.Either;
+            public Enums.TimesOfDay timeOfDay = Enums.TimesOfDay.Any;
+
+            public float maxVelocitySurface = float.MaxValue;
+            public float minVelocitySurface = float.MinValue;
+            public float maxVelocityOrbital = float.MaxValue;
+            public float minVelocityOrbital = float.MinValue;
+            public float maxAltitude = float.MaxValue;
+            public float minAltitude = float.MinValue;
+            public float maxVesselDistance = float.MaxValue;
+            public float minVesselDistance = 0f;
+
+            public Prerequisites() {}
+            public Prerequisites(Prerequisites p)
             {
-                get; // TODO: Get this using the bodyName string.
-                set;
+                bodyName = p.bodyName;
+                paused = p.paused;
+                scene = p.scene;
+                situation = p.situation;
+                cameraMode = p.cameraMode;
+                inAtmosphere = p.inAtmosphere;
+                timeOfDay = p.timeOfDay;
+                maxVelocitySurface = p.maxVelocitySurface;
+                minVelocitySurface = p.minVelocitySurface;
+                maxVelocityOrbital = p.maxVelocityOrbital;
+                minVelocityOrbital = p.minVelocityOrbital;
+                maxAltitude = p.maxAltitude;
+                minAltitude = p.minAltitude;
             }
 
-            public Vessel.Situations situation = (Vessel.Situations)0xFFF;
-            public Enums.CameraMode cameraMode = Enums.CameraMode.Any;
-
-            public Enums.Selector inAtmosphere = Enums.Selector.Either;
-
-            public float surfaceVelocity = -1;
-            public float surfaceVelocityBelow = -1;
-            public float surfaceVelocityAbove = -1;
-
-            public float velocityOrbital = -1;
-            public float maxVelocityOrbital = -1;
-            public float minVelocityOrbital = -1;
-            // TODO: Make sure any new fields are added to Equals and the persistor.
-
-            // TODO: Altitude max/min
+            // TODO: Make sure any new fields are added to Equals, the CTOR and the persistor.
 
 
             //public Playlist playAfter = null;
@@ -149,34 +225,114 @@ namespace SoundtrackEditor
             // TODO
             //
             // Is in sunlight?
-            // Is reentering?
+            // Is reentering? Detect when reentry is happening.
             // Play while scene is loading?
-            // IVA, internal view, map view
-            // Altitude
+            // Ground contact?
+            // Engines currently burning?
+            // Craft dead?
+            // hasTarget?
+            // Biomes
             // Vessel icon
-            // Craft dead
             // Craft name
-            // List<string> These playlists must already played
+            // Apoapsis max/min.
+            // Periapsis max/min.
+            // Altitude max/min.
+            // Radar altitude (surface travel) max/min.
+            // max/minDistanceTarget, max/minVelocityTarget
+            //
+            // Option to delay before switching? (hang time over jump between ground and flight for example)
             // Don't change from this until track complete/playlist complete
+            //   Option to wait until end of current track before switching
+            //   Option to wait until end of playlist before switching (sticky playlist)
+            // List<string> These playlists must already played
             // Fade out, fade in, crossfade
             //
             // Unload when the situation is no longer correct.
             //
 
-
-            public bool PrerequisitesMet()
+            public static string SituationToText(Vessel.Situations situation)
             {
-                // Scene
-                //Scene curScene = ConvertScene(GameInfo.gameScene);
-                Enums.Scene curScene = SoundtrackEditor.CurrentSituation.scene;
-                if ((curScene & scene) != curScene)
-                {
-                    /*Utils.Log("Prereq failed: Expected scene " + scene + ", but was " + curScene +
-                        ", " + (int)scene + " & " + (int)curScene + " = " + (int)(scene & curScene));*/
-                    return false;
-                }
+                if (situation == Enums.AnyVesselSituation)
+                    return "Any";
 
-                // Camera mode
+                string result = string.Empty;
+                if ((situation & Vessel.Situations.DOCKED) == Vessel.Situations.DOCKED)
+                    result += "DOCKED ";
+                if ((situation & Vessel.Situations.ESCAPING) == Vessel.Situations.ESCAPING)
+                    result += "ESCAPING ";
+                if ((situation & Vessel.Situations.FLYING) == Vessel.Situations.FLYING)
+                    result += "FLYING ";
+                if ((situation & Vessel.Situations.LANDED) == Vessel.Situations.LANDED)
+                    result += "LANDED ";
+                if ((situation & Vessel.Situations.ORBITING) == Vessel.Situations.ORBITING)
+                    result += "ORBITING ";
+                if ((situation & Vessel.Situations.PRELAUNCH) == Vessel.Situations.PRELAUNCH)
+                    result += "PRELAUNCH ";
+                if ((situation & Vessel.Situations.SPLASHED) == Vessel.Situations.SPLASHED)
+                    result += "SPLASHED ";
+                if ((situation & Vessel.Situations.SUB_ORBITAL) == Vessel.Situations.SUB_ORBITAL)
+                    result += "SUB_ORBITAL ";
+                return result;
+            }
+
+            public string PrintPrerequisites()
+            {
+                return
+                    "Paused:\t\t\t" + paused + "\r\n" +
+                    "Scene:\t\t\t" + (SoundtrackEditor.CurrentSituation == null ? "None" : Enum.GetName(typeof(Enums.Scenes), SoundtrackEditor.CurrentSituation.scene)) + "\r\n" +
+                    "Camera mode:\t\t" + Enum.GetName(typeof(Enums.CameraModes), cameraMode) + "\r\n" +
+                    "Body name:\t\t" + (bodyName.Length > 0 ? bodyName : "Any") + "\r\n" +
+                    "Situation:\t" + SituationToText(situation) + "\r\n" +
+                    "Max Orbital Velocity:\t" + (maxVelocityOrbital == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Min Orbital Velocity:\t" + (minVelocityOrbital == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Max Surface Velocity:\t" + (maxVelocitySurface == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Min Surface Velocity:\t" + (minVelocitySurface == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Max Altitude:\t\t" + (maxAltitude == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Min Altitude:\t\t" + (minAltitude == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "In Atmosphere:\t\t" + inAtmosphere + "\r\n" + 
+                    "Time Of Day:\t\t" + timeOfDay;
+            }
+
+            public static string PrintSituation()
+            {
+                string message =
+                    "Scene:\t\t\t" + Enum.GetName(typeof(Enums.Scenes), SoundtrackEditor.CurrentSituation.scene) + "\r\n" +
+                    "Camera mode:\t\t" + (CameraManager.Instance == null ? "No camera" : CameraManager.Instance.currentCameraMode.ToString()) + "\r\n" +
+                    "Paused:\t\t\t" + SoundtrackEditor.CurrentSituation.paused + "\r\n";
+
+                if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
+                    message += "Time Of Day:\t\t" + SoundtrackEditor.CurrentSituation.timeOfDay + "\r\n";
+
+                Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
+                if (v != null)
+                {
+                    message += "Body name:\t\t" + v.mainBody.name + "\r\n" +
+                    "Situation:\t\t\t" + v.situation + "\r\n" +
+                    "Orbital velocity:\t\t" + v.obt_velocity.magnitude + "\r\n" +
+                    "Surface velocity:\t\t" + v.srf_velocity.magnitude + "\r\n" +
+                    "Altitude:\t\t\t" + v.altitude + "\r\n" +
+                    "In Atmosphere:\t\t" + (v.atmDensity > 0);
+                }
+                else
+                    message += "Vessel:\t\t\tNo vessel";
+
+                return message;
+            }
+
+            public bool CheckPaused()
+            {
+                Enums.Selector curPaused = SoundtrackEditor.CurrentSituation.paused;
+                return (curPaused & paused) == curPaused;
+            }
+
+            public bool CheckScene()
+            {
+                Enums.Scenes curScene = SoundtrackEditor.CurrentSituation.scene;
+                return (curScene & scene) == curScene;
+            }
+
+            public bool CheckCameraMode()
+            {
                 if (CameraManager.Instance != null)
                 {
                     var curMode = Enums.ConvertCameraMode(CameraManager.Instance.currentCameraMode);
@@ -186,45 +342,100 @@ namespace SoundtrackEditor
                         return false;
                     }
                 }
+                return true;
+            }
+
+            public bool CheckBodyName(Vessel v)
+            {
+                // Body name
+                if (bodyName.Length > 0 && !bodyName.Equals(v.mainBody.name))
+                {
+                    Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
+                    return false;
+                }
+                return true;
+            }
+
+            public bool CheckSituation(Vessel v)
+            {
+                if ((v.situation & situation) != v.situation)
+                {
+                    Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
+                    return false;
+                }
+                return true;
+            }
+
+            public bool CheckOrbitalVelocity(Vessel v)
+            {
+                return (maxVelocityOrbital >= v.obt_velocity.magnitude) && (minVelocityOrbital <= v.obt_velocity.magnitude);
+            }
+
+            public bool CheckSurfaceVelocity(Vessel v)
+            {
+                return (maxVelocityOrbital >= v.srf_velocity.magnitude) && (minVelocityOrbital <= v.srf_velocity.magnitude);
+            }
+
+            public bool CheckAltitude(Vessel v)
+            {
+                return (maxAltitude >= v.altitude) && (minAltitude <= v.altitude);
+            }
+
+            public bool CheckVesselDistance(Vessel v)
+            {
+                return Utils.GetNearestVessel(minVesselDistance, maxVesselDistance, v) != null;
+            }
+
+            public bool CheckInAtmosphere(Vessel v)
+            {
+                if (inAtmosphere != Enums.Selector.Either)
+                {
+                    bool inAtm = v.atmDensity > 0;
+                    if (inAtmosphere == Enums.Selector.True && !inAtm ||
+                        inAtmosphere == Enums.Selector.False && inAtm)
+                        return false;
+                }
+                return true;
+            }
+
+            private CelestialBody _homeBody;
+            public bool CheckTimeOfDay()
+            {
+                if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
+                {
+                    if (_homeBody == null)
+                        _homeBody = FlightGlobals.GetHomeBody();
+                    double localTime = Sun.Instance.GetLocalTimeAtPosition(Utils.KscLatitude, Utils.KscLongitude, _homeBody);
+                    Enums.TimesOfDay tod = Enums.TimeToTimeOfDay(localTime);
+
+                    if ((tod & timeOfDay) != tod)
+                        return false;
+                }
+                return true;
+            }
+
+            public bool PrerequisitesMet()
+            {
+                if (!CheckPaused()) return false;
+                if (!CheckScene()) return false;
+                if (!CheckCameraMode()) return false;
+                if (!CheckTimeOfDay()) return false;
 
                 // TODO - Throws exceptions before the initial loading screen is completed.
                 Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
 
                 if (v != null)
                 {
-                    // Body name
-                    if (bodyName.Length > 0 && !bodyName.Equals(v.mainBody.name))
-                    {
-                        Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
-                        return false;
-                    }
+                    if (!CheckBodyName(v)) return false;
+                    if (!CheckSituation(v)) return false;
+                    if (!CheckOrbitalVelocity(v)) return false;
+                    if (!CheckSurfaceVelocity(v)) return false;
+                    if (!CheckAltitude(v)) return false;
+                    if (!CheckVesselDistance(v)) return false;
+                    if (!CheckInAtmosphere(v)) return false;
 
-                    // Situation
-                    if ((v.situation & situation) != v.situation)
-                    {
-                        Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
-                        return false;
-                    }
-
-                    double orbitalVelocity = v.obt_velocity.magnitude;
-                    if (maxVelocityOrbital != -1 && maxVelocityOrbital < orbitalVelocity) return false;
-                    if (minVelocityOrbital != -1 && minVelocityOrbital > orbitalVelocity) return false;
-                    double surfaceVelocity = v.srf_velocity.magnitude;
-                    if (surfaceVelocityBelow != -1 && surfaceVelocityBelow < orbitalVelocity) return false;
-                    if (surfaceVelocityAbove != -1 && surfaceVelocityAbove > orbitalVelocity) return false;
                     //if (p.playAfter
                     //if (p.playNext
-
-                    if (inAtmosphere != Enums.Selector.Either)
-                    {
-                        bool inAtm = v.atmDensity > 0;
-                        if (inAtmosphere == Enums.Selector.Yes && !inAtm ||
-                            inAtmosphere == Enums.Selector.No && inAtm)
-                        {
-                            Utils.Log("Prereq failed: " + (inAtm ? "In " : "Not in ") + "atmosphere");
-                            return false;
-                        }
-                    }
                 }
 
                 return true;
@@ -244,13 +455,17 @@ namespace SoundtrackEditor
                     return false;
                 }
 
-                return (this.inAtmosphere == p.inAtmosphere) &&
-                        (this.surfaceVelocity == p.surfaceVelocity) &&
-                        (this.surfaceVelocityBelow == p.surfaceVelocityBelow) &&
-                        (this.surfaceVelocityAbove == p.surfaceVelocityAbove) &&
-                        (this.velocityOrbital == p.velocityOrbital) &&
+                return (this.paused == p.paused) &&
+                        (this.inAtmosphere == p.inAtmosphere) &&
+                        (this.timeOfDay == p.timeOfDay) &&
+                        (this.maxVelocitySurface == p.maxVelocitySurface) &&
+                        (this.minVelocitySurface == p.minVelocitySurface) &&
                         (this.maxVelocityOrbital == p.maxVelocityOrbital) &&
                         (this.minVelocityOrbital == p.minVelocityOrbital) &&
+                        (this.maxAltitude == p.maxAltitude) &&
+                        (this.minAltitude == p.minAltitude) &&
+                        (this.maxVesselDistance == p.maxVesselDistance) &&
+                        (this.minVesselDistance == p.minVesselDistance) &&
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -266,13 +481,17 @@ namespace SoundtrackEditor
                     return false;
                 }
 
-                return (this.inAtmosphere == p.inAtmosphere) &&
-                        (this.surfaceVelocity == p.surfaceVelocity) &&
-                        (this.surfaceVelocityBelow == p.surfaceVelocityBelow) &&
-                        (this.surfaceVelocityAbove == p.surfaceVelocityAbove) &&
-                        (this.velocityOrbital == p.velocityOrbital) &&
+                return (this.paused == p.paused) &&
+                        (this.inAtmosphere == p.inAtmosphere) &&
+                        (this.timeOfDay == p.timeOfDay) &&
+                        (this.maxVelocitySurface == p.maxVelocitySurface) &&
+                        (this.minVelocitySurface == p.minVelocitySurface) &&
                         (this.maxVelocityOrbital == p.maxVelocityOrbital) &&
                         (this.minVelocityOrbital == p.minVelocityOrbital) &&
+                        (this.maxAltitude == p.maxAltitude) &&
+                        (this.minAltitude == p.minAltitude) &&
+                        (this.maxVesselDistance == p.maxVesselDistance) &&
+                        (this.minVesselDistance == p.minVesselDistance) &&
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -285,17 +504,21 @@ namespace SoundtrackEditor
             {
                 return new
                 {
-                    A = inAtmosphere,
-                    B = surfaceVelocity,
-                    C = surfaceVelocityBelow,
-                    D = surfaceVelocityAbove,
-                    E = velocityOrbital,
+                    A = paused,
+                    B = inAtmosphere,
+                    C = timeOfDay,
+                    D = maxVelocitySurface,
+                    E = minVelocitySurface,
                     F = maxVelocityOrbital,
                     G = minVelocityOrbital,
-                    H = scene,
-                    I = situation,
-                    J = cameraMode,
-                    K = bodyName
+                    H = maxAltitude,
+                    I = minAltitude,
+                    J = maxVesselDistance,
+                    K = minVesselDistance,
+                    L = scene,
+                    M = situation,
+                    N = cameraMode,
+                    O = bodyName
                 }.GetHashCode();
             }
             #endregion Equality operator
@@ -318,8 +541,12 @@ namespace SoundtrackEditor
             return (this.enabled == p.enabled) &&
                     (this.loop == p.loop) &&
                     (this.shuffle == p.shuffle) &&
+                    (this.pauseOnGamePause == p.pauseOnGamePause) &&
                     (this.disableAfterPlay == p.disableAfterPlay) &&
                     (this.channel == p.channel) &&
+                    (this.playNext == p.playNext) &&
+                    (this.playBefore == p.playBefore) &&
+                    (this.playAfter == p.playAfter) &&
                     (this.name.Equals(p.name)) &&
                     (this.tracks.SequenceEqual(p.tracks)) &&
                     (this.playWhen.Equals(p.playWhen)) &&
@@ -338,9 +565,12 @@ namespace SoundtrackEditor
             return (this.enabled == p.enabled) &&
                     (this.loop == p.loop) &&
                     (this.shuffle == p.shuffle) &&
+                    (this.pauseOnGamePause == p.pauseOnGamePause) &&
                     (this.disableAfterPlay == p.disableAfterPlay) &&
                     (this.channel == p.channel) &&
-                    (this.name.Equals(p.name)) &&
+                    (this.playNext == p.playNext) &&
+                    (this.playBefore == p.playBefore) &&
+                    (this.playAfter == p.playAfter) &&
                     (this.tracks.SequenceEqual(p.tracks)) &&
                     (this.playWhen.Equals(p.playWhen)) &&
                     (this.fade == p.fade) &&
@@ -355,14 +585,18 @@ namespace SoundtrackEditor
                 A = enabled,
                 B = loop,
                 C = shuffle,
-                D = disableAfterPlay,
-                E = channel,
-                F = name,
-                G = tracks,
-                H = playWhen,
-                I = fade,
-                J = trackFade,
-                K = preloadTime
+                D = pauseOnGamePause,
+                E = disableAfterPlay,
+                F = channel,
+                G = playNext,
+                H = playBefore,
+                I = playAfter,
+                J = name,
+                K = tracks,
+                L = playWhen,
+                M = fade,
+                N = trackFade,
+                O = preloadTime
             }.GetHashCode();
         }
         #endregion Equality Operator

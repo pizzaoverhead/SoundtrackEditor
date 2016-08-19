@@ -31,11 +31,25 @@ public class MP3Import
     private const double const_1_div_2147483648_ = 1.0 / 2147483648.0; // 32 bit
     #endregion
 
-    public AudioClip StartImport(string mPath)
+    public struct TrackInfo
+    {
+        public int Rate;
+        public int Channels;
+        public int Encoding;
+        public string Album;
+        public string Artist;
+        public string Title;
+        public string Year;
+        public string Genre;
+        public string Comment;
+        public string Tag;
+    }
+
+    public TrackInfo GetTrackInfo(string path)
     {
         MPGImport.mpg123_init();
         handle_mpg = MPGImport.mpg123_new(null, errPtr);
-        x = MPGImport.mpg123_open(handle_mpg, mPath);
+        x = MPGImport.mpg123_open(handle_mpg, path);
         MPGImport.mpg123_getformat(handle_mpg, out rate, out channels, out encoding);
         intRate = rate.ToInt32();
         intChannels = channels.ToInt32();
@@ -45,37 +59,82 @@ public class MP3Import
         MPGImport.mpg123_format_none(handle_mpg);
         MPGImport.mpg123_format(handle_mpg, intRate, intChannels, 208);
 
-		Debug.Log("Getting ID3 info");
-		MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
-		//MPGImport.mpg123_id3v2 v2 = (MPGImport.mpg123_id3v2)Marshal.PtrToStructure(id3v2, typeof(MPGImport.mpg123_id3v2));
-        Debug.Log(new String(v1.album));	// "Runnin' Wild"
-        Debug.Log(new String(v1.artist));	// "Airbourne"
-        Debug.Log(new String(v1.title));	// "Stand Up For Rock N Roll"
-        Debug.Log(new String(v1.year));		// "2007"
-        Debug.Log(v1.genre);				// 17
-        Debug.Log(new String(v1.comment));	// "Comment"
-        Debug.Log(new String(v1.tag));		// "TAG"
-
-
-        FrameSize = MPGImport.mpg123_outblock(handle_mpg);
-        byte[] Buffer = new byte[FrameSize];
-        lengthSamples = MPGImport.mpg123_length(handle_mpg);
-
-        myClip = AudioClip.Create(new String(v1.title), lengthSamples, intChannels, intRate, false, false);
-
-        int importIndex = 0;
-
-        while (0 == MPGImport.mpg123_read(handle_mpg, Buffer, FrameSize, out done))
+        if (id3v1 != IntPtr.Zero)
         {
-            float[] fArray;
-            fArray = ByteToFloat(Buffer);
-
-            myClip.SetData(fArray, (importIndex * fArray.Length) / 2);
-
-            importIndex++;
+            MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
+            return new TrackInfo
+            {
+                Album = new String(v1.album),	    // "Runnin' Wild"
+                Artist = new String(v1.artist),	    // "Airbourne"
+                Title = new String(v1.title),	    // "Stand Up For Rock N Roll"
+                Year = new String(v1.year), 	    // "2007"
+                Genre = (v1.genre < GenreText.Length ? GenreText[v1.genre] : string.Empty), // "Rock"
+                Comment = new String(v1.comment),    // "Comment"
+                Tag = new String(v1.tag),    // "Comment"
+                Rate = intRate,
+                Channels = intChannels,
+                Encoding = intEncoding
+            };
         }
-
         MPGImport.mpg123_close(handle_mpg);
+
+        // TODO: ID3v2 support is more complex.
+        return new TrackInfo();
+    }
+
+    public AudioClip StartImport(string mPath)
+    {
+        MPGImport.mpg123_init();
+        handle_mpg = MPGImport.mpg123_new(null, errPtr);
+        try
+        {
+            x = MPGImport.mpg123_open(handle_mpg, mPath);
+            MPGImport.mpg123_getformat(handle_mpg, out rate, out channels, out encoding);
+            intRate = rate.ToInt32();
+            intChannels = channels.ToInt32();
+            intEncoding = encoding.ToInt32();
+
+            MPGImport.mpg123_id3(handle_mpg, out id3v1, out id3v2);
+            MPGImport.mpg123_format_none(handle_mpg);
+            MPGImport.mpg123_format(handle_mpg, intRate, intChannels, 208);
+
+            Debug.Log("Getting ID3 info");
+            MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
+
+            FrameSize = MPGImport.mpg123_outblock(handle_mpg);
+            byte[] Buffer = new byte[FrameSize];
+            lengthSamples = MPGImport.mpg123_length(handle_mpg);
+
+            myClip = AudioClip.Create(new String(v1.title), lengthSamples, intChannels, intRate, false);
+
+            int importIndex = 0;
+
+            while (0 == MPGImport.mpg123_read(handle_mpg, Buffer, FrameSize, out done))
+            {
+                float[] fArray;
+                fArray = ByteToFloat(Buffer);
+                float offset = (importIndex * fArray.Length) / 2;
+                if (offset > lengthSamples)
+                {
+                    Debug.LogWarning("[STED] MP3 file " + mPath + " is of an unexpected length and was truncated.");
+                    break; // File was reported as shorter than it is. Salvage what we have and return.
+                }
+                myClip.SetData(fArray, (int)offset);
+                importIndex++;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Attempt to dump any used memory before continuing.
+            // TODO: Still holds onto memory when repeatedy failing.
+            myClip.UnloadAudioData();
+            myClip = null;
+            throw ex;
+        }
+        finally
+        {
+            MPGImport.mpg123_close(handle_mpg);
+        }
         return myClip;
     }
 
@@ -113,9 +172,91 @@ public class MP3Import
     public float[] ByteToFloat(byte[] bArray)
     {
         Int16[] iArray;
-
         iArray = ByteToInt16(bArray);
-
         return IntToFloat(iArray);
     }
+
+    // Source: https://de.wikipedia.org/wiki/Liste_der_ID3v1-Genres
+    public static readonly string[] GenreText = new string[] {
+        "Blues",
+        "Classic Rock",
+        "Country",
+        "Dance",
+        "Disco",
+        "Funk",
+        "Grunge",
+        "Hip-Hop",
+        "Jazz",
+        "Metal",
+        "New Age",
+        "Oldies",
+        "Other",
+        "Pop",
+        "Rhythm and Blues",
+        "Rap",
+        "Reggae",
+        "Rock",
+        "Techno",
+        "Industrial",
+        "Alternative",
+        "Ska",
+        "Death Metal",
+        "Pranks",
+        "Soundtrack",
+        "Euro-Techno",
+        "Ambient",
+        "Trip-Hop",
+        "Vocal",
+        "Jazz & Funk",
+        "Fusion",
+        "Trance",
+        "Classical",
+        "Instrumental",
+        "Acid",
+        "House",
+        "Game",
+        "Sound Clip",
+        "Gospel",
+        "Noise",
+        "Alternative Rock",
+        "Bass",
+        "Soul",
+        "Punk",
+        "Space",
+        "Meditative",
+        "Instrumental Pop",
+        "Instrumental Rock",
+        "Ethnic",
+        "Gothic",
+        "Darkwave",
+        "Techno-Industrial",
+        "Electronic",
+        "Pop-Folk",
+        "Eurodance",
+        "Dream",
+        "Southern Rock",
+        "Comedy",
+        "Cult",
+        "Gangsta",
+        "Top 40",
+        "Christian Rap",
+        "Pop/Funk",
+        "Jungle",
+        "Native US",
+        "Cabaret",
+        "New Wave",
+        "Psychedelic",
+        "Rave",
+        "Showtunes",
+        "Trailer",
+        "Lo-Fi",
+        "Tribal",
+        "Acid Punk",
+        "Acid Jazz",
+        "Polka",
+        "Retro",
+        "Musical",
+        "Rock ’n’ Roll",
+        "Hard Rock"
+    };
 }

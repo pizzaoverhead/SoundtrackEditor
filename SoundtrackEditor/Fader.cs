@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace SoundtrackEditor
 {
-    class Fader
+    public class Fader
     {
         private System.Timers.Timer fadeOutTimer = new System.Timers.Timer();
 

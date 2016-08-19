@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using System.Text;
+using KSP.UI.Screens;//required for ApplicationLauncherButton type
 
 /* Plans
  * 
@@ -18,9 +19,14 @@ using System.Text;
 
 // Main: Make GUI for debugging/viewing state.
 
+// TODO: Pause music when the game pauses.
+// TODO: Don't change tracks just because the camera view changed.
+
 // TODO: Multichannel sound.
 // TODO: Ensure preloading takes into account pausing/playlist changing.
 // TODO: Merge playlists when multiple are valid. Play non-shuffled tracks first, then fill with the rest.
+// TODO: Unload any unused stock tracks.
+// TODO: Only check the situation for things playlists are actually interested in.
 
 // Idea: Play main theme for big milestones: First time reaching orbit, munar flag etc.
 
@@ -36,9 +42,10 @@ namespace SoundtrackEditor
         //float x = sl.timeOfTheDay;
         MusicLogic music;
         // Create a new empty audio clip to replace the stock ones when they are disabled.
-        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false, true);
-        public static Playlist.Prerequisites CurrentSituation = new Playlist.Prerequisites() { scene = Enums.Scene.Loading };
+        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false);
+        public static Playlist.Prerequisites CurrentSituation = new Playlist.Prerequisites() { scene = Enums.Scenes.Loading };
         public List<Playlist> Playlists = new List<Playlist>();
+        public List<Playlist> ActivePlaylists; // Currently selected for use.
         public Playlist CurrentPlaylist;
         public AudioSource Speaker;
         public AudioClip CurrentClip;
@@ -46,13 +53,13 @@ namespace SoundtrackEditor
         public static bool InitialLoadingComplete = false; // Whether we have reached the main menu yet during this session.
         private System.Timers.Timer preloadTimer = new System.Timers.Timer();
         private Fader fader;
+        //private EventManager _eventManager = new EventManager();
 
-        private static SoundtrackEditor _instance;
-        public static SoundtrackEditor Instance { get { return _instance; } }
+        public static SoundtrackEditor Instance { get; private set; }
 
         public void Start()
         {
-            _instance = this;
+            Instance = this;
             music = MusicLogic.fetch;
 
             preloadTimer.Elapsed += new System.Timers.ElapsedEventHandler(preloadTimer_Elapsed);
@@ -73,26 +80,29 @@ namespace SoundtrackEditor
 
             UnloadStockMusicPlayer();
 
+            /*for (int i = 0; i < Enum.GetNames(typeof(Enums.Channel)).Length; i++)
+            {
+                Speakers[i] = new Speaker(gameObject, (Enums.Channel)i);
+            }*/
+
             // Set up the main audio source.
             Speaker = gameObject.AddComponent<AudioSource>();
             // Disable positional effects.
-            Speaker.panLevel = 0;
+            Speaker.spatialBlend = 0;
             Speaker.dopplerLevel = 0;
             Speaker.loop = false;
             Speaker.volume = GameSettings.MUSIC_VOLUME;
             fader = new Fader(Speaker);
 
+            // TODO: Change volume on unpause or main menu.
+
+            EventManager.Instance.AddEvents();
+
             // Set up test playlists.
             //SoundTest soundTest = new SoundTest();
             //SoundTest.CreatePlaylists(Playlists);
 
-            Persistor persistor = new Persistor();
-            Playlists = persistor.LoadPlaylists();
-
-            // TODO: Change volume on unpause or main menu.
-
-            EventManager eventManager = new EventManager();
-            eventManager.AddEvents();
+            Playlists = Persistor.LoadPlaylists();
         }
 
         /*private List<string> GetUserTrackNames()
@@ -144,95 +154,6 @@ namespace SoundtrackEditor
         //    [ ] Unload unused stock tracks
         //    [ ] Only load tracks when they are being played:    GameEvents.onGameSceneLoadRequested.Add(MyMethod); //(don't forget destroy)
         //    [ ] Unload them when done.
-
-        #region GUI
-        protected Rect windowPos = new Rect(Screen.width / 10, Screen.height / 10, 10f, 10f);
-
-        internal void drawGUI()
-        {
-            GUI.skin = HighLogic.Skin;
-            windowPos = GUILayout.Window(-5236628, windowPos, mainGUI, "Soundtrack Editor", GUILayout.Width(250), GUILayout.Height(50));
-        }
-
-        private string _previousTimeTrack = String.Empty;
-        private void mainGUI(int windowID)
-        {
-            if (CurrentClip == null || CurrentClip.name == null)
-                GUILayout.Label("Now Playing: None");
-            else
-                GUILayout.Label("Now Playing: " + CurrentClip.name);
-
-
-            if (CurrentClip != null)
-            {
-                GUILayout.BeginHorizontal();
-                TimeSpan currentTime = TimeSpan.FromSeconds(Speaker.time);
-                string ct = currentTime.Hours > 0 ?
-                    String.Format("{0:D2}:{1:D2}:{2:D2}", currentTime.Hours, currentTime.Minutes, currentTime.Seconds) :
-                    String.Format("{0:D2}:{1:D2}", currentTime.Minutes, currentTime.Seconds);
-                GUILayout.Label(ct);
-
-                float newTime = GUILayout.HorizontalSlider(Speaker.time, 0, CurrentClip.length);
-                // Filter to prevent stuttering when not changing the time.
-                if (CurrentClip.name != _previousTimeTrack)
-                {
-                    Debug.Log("_previousTimeTrack: " + _previousTimeTrack + ", cur: " + CurrentClip.name + ", new: " + newTime + ", sTime: " + Speaker.time);
-                    _previousTimeTrack = CurrentClip.name;
-                }
-                else
-                {
-                    Debug.Log("_previousTimeTrack: " + _previousTimeTrack + ", cur: " + CurrentClip.name + ", new: " + newTime);
-                    if (Math.Abs(Speaker.time - newTime) > 1)
-                        Speaker.time = newTime;
-                }
-
-                TimeSpan endTime = TimeSpan.FromSeconds(CurrentClip.length);
-                string et = endTime.Hours > 0 ?
-                    String.Format("{0:D2}:{1:D2}:{2:D2}", endTime.Hours, endTime.Minutes, endTime.Seconds) :
-                    String.Format("{0:D2}:{1:D2}", endTime.Minutes, endTime.Seconds);
-                GUILayout.Label(et);
-                GUILayout.EndHorizontal();
-            }
-
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("|◄")) { }
-            if (GUILayout.Button("◄◄"))
-                Rewind();
-            if (GUILayout.Button("■"))
-                StopPlayback();
-            if (_playbackPaused)
-            {
-                if (GUILayout.Button("►"))
-                    ResumePlayback();
-            }
-            else
-            {
-                if (GUILayout.Button("▌▌"))
-                    PausePlayback();
-            }
-            if (GUILayout.Button("►►"))
-                FastForward();
-            if (GUILayout.Button("►|"))
-                PlayNextTrack();
-            GUILayout.EndHorizontal();
-
-            if (_loadingClip != null)
-                GUILayout.Label("Preloading track " + _loadingClip.name);
-
-            if (CurrentPlaylist != null && CurrentPlaylist.tracks != null)
-            {
-                foreach (var t in CurrentPlaylist.tracks)
-                {
-                    if (CurrentPlaylist.tracks[CurrentPlaylist.trackIndex].Equals(t))
-                        GUILayout.Label("► " + t);
-                    else
-                        GUILayout.Label("  " + t);
-                }
-            }
-
-            GUI.DragWindow();
-        }
-        #endregion GUI
 
         private void UnloadStockMusicPlayer()
         {
@@ -291,7 +212,7 @@ namespace SoundtrackEditor
             foreach (var clip in allTracks)
             {
                 //GameDatabase.Instance.RemoveAudioClip(clip.name);
-                AudioClip.DestroyImmediate(clip, true);
+                DestroyImmediate(clip, true);
             }
 
             //deleted = true;
@@ -300,100 +221,37 @@ namespace SoundtrackEditor
         private bool _loading = false;
         public void Update()
         {
-            if (_loadingClip != null && _loadingClip.isReadyToPlay)
-                PlayClip(_loadingClip);
+            if (LoadingClip != null && LoadingClip.loadState == AudioDataLoadState.Loaded)
+                PlayClip(LoadingClip);
 
-            UpdateSituation();
             UpdateCurrentTrack();
             fader.Fade();
         }
 
-        public void UpdateSituation()
-        {
-            bool changed = false;
-
-            // Scene: Handled by events.
-            // Body: Handled by events. TODO: Not suitable?
-            // Situation: Handled by events.
-            // Camera mode
-
-            // Throws exceptions before the initial loading screen is completed.
-            if (CurrentSituation.scene == Enums.Scene.Flight)
-            {
-                Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
-
-                if (v != null)
-                {
-                    if (!FlightGlobals.currentMainBody.name.Equals(CurrentSituation.bodyName))
-                    {
-                        Utils.Log("Body name changed");
-                        CurrentSituation.bodyName = FlightGlobals.currentMainBody.name;
-                        changed = true;
-                    }
-
-                    Enums.Selector inAtmosphere = v.atmDensity > 0 ? Enums.Selector.Yes : Enums.Selector.No;
-                    if (CurrentSituation.inAtmosphere != inAtmosphere)
-                    {
-                        Utils.Log("In atmosphere changed");
-                        changed = true;
-                    }
-                    CurrentSituation.inAtmosphere = inAtmosphere;
-
-                    //FlightGlobals.currentMainBody.maxAtmosphereAltitude
-                    //v.atmDensity
-
-                    if (CameraManager.Instance != null)
-                    {
-                        changed |= CurrentSituation.cameraMode != Enums.ConvertCameraMode(CameraManager.Instance.currentCameraMode);
-                        CurrentSituation.cameraMode = Enums.ConvertCameraMode(CameraManager.Instance.currentCameraMode);
-                        if (changed)
-                            Utils.Log("Camera mode changed");
-                    }
-                }
-            }
-
-
-            // TODO:
-            // Velocity
-
-            if (changed)
-            {
-                Utils.Log("Situation has changed");
-                OnSituationChanged();
-            }
-        }
-
         public void OnSituationChanged()
         {
-            Playlist p = SelectPlaylist();
-            if (p == null)
-            {
-                StopPlayback();
-                CurrentPlaylist = null;
-                return;
-            }
-
-            if (!p.Equals(CurrentPlaylist))
-            {
-                Utils.Log("Switching to playlist " + p.name + " in scene " + CurrentSituation.scene);
-                SwitchToPlaylist(p);
-            }
+            UpdatePlaylist();
         }
+
+        #region Playback management
 
         public void UpdateCurrentTrack()
         {
             // TODO: Pre-emtptively load tracks when near the end of the current one.
-            if (Speaker.clip == null)
+            if (Speaker.clip == null || Speaker.clip.loadState == AudioDataLoadState.Failed)
             {
+                if (Speaker.clip != null)
+                    Utils.Log("Failed loading track " + Speaker.clip.name);
+
                 if (CurrentPlaylist != null && CurrentPlaylist.tracks.Count > 0)
                 {
                     Utils.Log("Loading initial track");
                     PlayNextTrack(CurrentPlaylist);
                 }
             }
-            else if (!Speaker.isPlaying && !_playbackPaused)
+            else if (!Speaker.isPlaying && !PlaybackPaused)
             {
-                if (!Speaker.clip.isReadyToPlay)
+                if (Speaker.clip.loadState != AudioDataLoadState.Loaded)
                 {
                     Utils.Log("Loading...");
                     _loading = true;
@@ -412,7 +270,66 @@ namespace SoundtrackEditor
             // Else loaded and playing.
         }
 
-        public Playlist SelectPlaylist()
+        public void UpdatePlaylist()
+        {
+            ActivePlaylists = GetValidPlaylists();
+            if (ActivePlaylists == null || ActivePlaylists.Count == 0)
+            {
+                StopPlayback();
+                CurrentPlaylist = null;
+                return;
+            }
+
+            SortActivePlaylists();
+
+            if (!ActivePlaylists.Equals(CurrentPlaylist))
+            {
+                CurrentPlaylist = ActivePlaylists[0];
+                Utils.Log("Switching to playlist " + ActivePlaylists[0].name + " of " + ActivePlaylists.Count + " matching playlists.");
+                SwitchToPlaylist(ActivePlaylists[0]);
+            }
+        }
+
+        private void SortActivePlaylists()
+        {
+            int numPlaylists = ActivePlaylists.Count;
+            bool movedCurrent = false;
+            for (int i = 0; i < numPlaylists; i++)
+            {
+                if (!movedCurrent && i > 0 && ActivePlaylists[i] == CurrentPlaylist)
+                {
+                    ActivePlaylists.RemoveAt(i);
+                    ActivePlaylists.Insert(0, CurrentPlaylist);
+                    i = 0;
+                    movedCurrent = true;
+                }
+
+                bool hasPlayNext = !String.IsNullOrEmpty(ActivePlaylists[i].playNext);
+                bool hasPlayAfter = !String.IsNullOrEmpty(ActivePlaylists[i].playAfter);
+                bool hasPlayBefore = !String.IsNullOrEmpty(ActivePlaylists[i].playBefore);
+                for (int j = 0; j < numPlaylists; j++)
+                {
+                    string n = ActivePlaylists[j].name;
+                    if (j > i && ((hasPlayNext && n == ActivePlaylists[i].playNext) || (hasPlayAfter && n == ActivePlaylists[i].playAfter)))
+                    {
+                        Playlist p = ActivePlaylists[j];
+                        ActivePlaylists.RemoveAt(j);
+                        ActivePlaylists.Insert(i, p);
+                        break;
+                    }
+                    else if (hasPlayBefore && n == ActivePlaylists[i].playBefore)
+                    {
+                        Playlist p = ActivePlaylists[i];
+                        ActivePlaylists.RemoveAt(i);
+                        int insertAt = j - 1 >= 0 ? j - 1 : 0;
+                        ActivePlaylists.Insert(insertAt, p);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public List<Playlist> GetValidPlaylists()
         {
             var validPlaylists = new List<Playlist>();
             foreach (Playlist p in Playlists)
@@ -431,7 +348,7 @@ namespace SoundtrackEditor
             // TODO: Select an appropriate playlist.
             // Merge all valid playlists?
             if (validPlaylists.Count > 0)
-                return validPlaylists[0];
+                return validPlaylists;
             else
             {
                 Utils.Log("No valid playlists found!");
@@ -454,6 +371,21 @@ namespace SoundtrackEditor
                 Utils.Log("Playlist was empty: " + p.name);
         }
 
+        public void PlayPreviousTrack()
+        {
+            if (CurrentPlaylist == null || CurrentPlaylist.tracks.Count == 0)
+            {
+                CurrentClip = null;
+                return;
+            }
+
+            Utils.Log("Playing previous track");
+            CurrentPlaylist.trackIndex--;
+            if (CurrentPlaylist.trackIndex < 0)
+                CurrentPlaylist.trackIndex = 0;
+            PlayClip(CurrentPlaylist.tracks[CurrentPlaylist.trackIndex]);
+        }
+
         public void PlayNextTrack()
         {
             PlayNextTrack(CurrentPlaylist);
@@ -463,12 +395,24 @@ namespace SoundtrackEditor
         {
             if (p == null)
             {
-                Debug.LogError("PlayNextTrack: Playlist was null");
+                CurrentClip = null;
+                //Debug.LogError("PlayNextTrack: Playlist was null");
                 return;
             }
             if (p.tracks.Count == 0)
             {
-                // TODO: Play next playlist.
+                // Empty playlist.
+                if (ActivePlaylists.Count > 1)
+                {
+                    int i = ActivePlaylists.IndexOf(CurrentPlaylist) + 1;
+                    if (i < ActivePlaylists.Count)
+                    {
+                        SwitchToPlaylist(ActivePlaylists[i]);
+                        return;
+                    }
+                    Utils.Log("PlayNextTrack: No other playlists found");
+                }
+                CurrentClip = null;
                 Utils.Log("PlayNextTrack: No tracks found");
                 return;
             }
@@ -477,13 +421,22 @@ namespace SoundtrackEditor
             p.trackIndex++;
             if (p.trackIndex >= p.tracks.Count)
             {
-                if (!p.loop)
+                // Check if we have any other appropriate playlists
+                if (ActivePlaylists.Count > 1)
                 {
-                    // TODO: Play next playlist.
+                    int i = ActivePlaylists.IndexOf(CurrentPlaylist) + 1;
+                    if (i < ActivePlaylists.Count)
+                    {
+                        SwitchToPlaylist(ActivePlaylists[i]);
+                        return;
+                    }
+                }
+                if (!p.loop) // TODO: should loop have priority over playNext?
+                {
                     Utils.Log("PlayNextTrack: All tracks played (" + p.trackIndex + " >= " + p.tracks.Count + ")");
                     p.trackIndex--;
 
-                    if (!String.IsNullOrEmpty(p.playNext))
+                    if (!string.IsNullOrEmpty(p.playNext))
                     {
                         Utils.Log("Playlist ended. Playing next " + p.playNext);
                         foreach (Playlist play in Playlists)
@@ -497,9 +450,10 @@ namespace SoundtrackEditor
                             }
                         }
                     }
-                    return;
+                    return; // No more tracks to play.
                 }
-                p.trackIndex = 0;
+                else
+                    p.trackIndex = 0;
             }
 
             PlayClip(p.tracks[p.trackIndex]);
@@ -516,7 +470,8 @@ namespace SoundtrackEditor
             }
         }
 
-        private AudioClip _loadingClip = null;
+        public AudioClip LoadingClip { get; private set; }
+
         public void PlayClip(AudioClip clip)
         {
             if (clip == null)
@@ -524,14 +479,14 @@ namespace SoundtrackEditor
                 Debug.LogError("[STED] PlayClip: Unabled to load clip");
                 return;
             }
-            if (!clip.isReadyToPlay)
+            if (clip.loadState != AudioDataLoadState.Loaded)
             {
                 Utils.Log("Loading " + clip.name + "...");
-                _loadingClip = clip;
+                LoadingClip = clip;
                 return;
             }
             else
-                _loadingClip = null;
+                LoadingClip = null;
             if (clip.length == 0)
             {
                 Debug.LogError("[STED] PlayClip: Clip was empty " + clip.name);
@@ -546,6 +501,7 @@ namespace SoundtrackEditor
             Utils.Log("Now Playing: " + clip.name);
             CurrentClip = clip;
             Speaker.clip = clip;
+            Speaker.time = 0;
 
             if (CurrentPlaylist.fade.fadeIn > 0)
                 fader.BeginPlaylistFadeIn(CurrentPlaylist);
@@ -570,35 +526,62 @@ namespace SoundtrackEditor
         {
             Speaker.Stop();
             fader.PlaybackStopped();
+            PlaybackPaused = false;
         }
 
-        private bool _playbackPaused = false;
+        private bool _trackPausedBeforeGamePause = false;
+        public void OnGamePause()
+        {
+            if (PlaybackPaused)
+                _trackPausedBeforeGamePause = true;
+            else
+                PausePlayback();
+        }
+
+        public void OnGameUnpause()
+        {
+            if (!_trackPausedBeforeGamePause)
+                ResumePlayback();
+            _trackPausedBeforeGamePause = false;
+        }
+
+        public bool PlaybackPaused { get; private set; }
+
         public void PausePlayback()
         {
-            Speaker.Pause();
-            _playbackPaused = true;
+            if (Speaker.isPlaying)
+            {
+                Speaker.Pause();
+                PlaybackPaused = true;
+            }
         }
 
         public void ResumePlayback()
         {
-            if (_playbackPaused)
+            if (PlaybackPaused)
             {
                 Speaker.Play();
-                _playbackPaused = false;
+                PlaybackPaused = false;
             }
         }
 
         private int _skipTime = 10;
         public void FastForward()
         {
-            float t = Speaker.time + _skipTime;
-            Speaker.time = t >= Speaker.clip.length ? Speaker.clip.length - 0.5f : t;
+            if (Speaker.clip != null)
+            {
+                float t = Speaker.time + _skipTime;
+                Speaker.time = t >= Speaker.clip.length ? Speaker.clip.length - 0.5f : t;
+            }
         }
 
         public void Rewind()
         {
-            float t = Speaker.time - _skipTime;
-            Speaker.time = t > 0 ? t : 0;
+            if (Speaker.clip != null)
+            {
+                float t = Speaker.time - _skipTime;
+                Speaker.time = t > 0 ? t : 0;
+            }
         }
 
         public void preloadTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
@@ -611,8 +594,9 @@ namespace SoundtrackEditor
             }
         }
 
-    } // End of class.
+        #endregion Playback management
 
+    } // End of class.
 
     /* Tasks:
      * Create your own AudioSource, make sure it stays alive in all scenes.
@@ -634,16 +618,6 @@ namespace SoundtrackEditor
      *     Flyby
      *     Each biome
      *   Targeted craft
-     *   
-     *   Vessel Situations
-            LANDED = 0,
-            SPLASHED = 1,
-            PRELAUNCH = 2,
-            FLYING = 3,
-            SUB_ORBITAL = 4,
-            ORBITING = 5,
-            ESCAPING = 6,
-            DOCKED = 7,
      *   
      * Ability to play track on first discovery only.
      * Ability to queue a track to play immediately after the current one ends.

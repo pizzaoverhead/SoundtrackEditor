@@ -8,9 +8,8 @@ namespace SoundtrackEditor
     public static class Enums
     {
         [Flags]
-        public enum Scene
+        public enum Scenes
         {
-            None = 0,
             Loading = 0x1,
             LoadingBuffer = 0x2,
             MainMenu = 0x4,
@@ -22,7 +21,12 @@ namespace SoundtrackEditor
             TrackingStation = 0x100,
             Flight = 0x200,
             PSystem = 0x400,
-            Any = 0xFFF
+            AstronautComplex = 0x800,
+            KSPedia = 0x1000,
+            MissionControl = 0x2000,
+            RnDComplex = 0x4000,
+            Any = Loading | LoadingBuffer | MainMenu | Settings | Credits | SpaceCentre | VAB | SPH | TrackingStation |
+                Flight | PSystem | AstronautComplex | KSPedia | MissionControl | RnDComplex
         }
 
         public enum Selector
@@ -35,39 +39,81 @@ namespace SoundtrackEditor
         }
 
         [Flags]
-        public enum CameraMode
+        public enum CameraModes
         {
             Flight = 0x1,
             Map = 0x2,
             External = 0x4,
             IVA = 0x8,
-            Internal = 10,
-            Any = 0xF
+            Internal = 0x10,
+            Any = Flight | Map | External | IVA | Internal
         }
 
-        public static CameraMode ConvertCameraMode(CameraManager.CameraMode mode)
+        public static Vessel.Situations AnyVesselSituation = Vessel.Situations.DOCKED | Vessel.Situations.ESCAPING | Vessel.Situations.FLYING |
+            Vessel.Situations.LANDED | Vessel.Situations.ORBITING | Vessel.Situations.PRELAUNCH | Vessel.Situations.SPLASHED | Vessel.Situations.SUB_ORBITAL;
+
+        public enum Channel
+        {
+            Ship = 0,
+	        Voice = 1,
+	        Ambient = 2,
+            Music = 3,
+            UI = 4,
+            Channel5 = 5,
+            Channel6 = 6,
+            Channel7 = 7
+        }
+
+        [Flags]
+        public enum TimesOfDay
+        {
+            NightAM = 0x1,
+            TwilightAM = 0x2,
+            DayAM = 0x4,
+            DayPM = 0x8,
+            TwilightPM = 0x10,
+            NightPM = 0x20,
+            Any = NightAM | TwilightAM | DayAM | DayPM | TwilightPM | NightPM
+        }
+
+        public static Enums.TimesOfDay TimeToTimeOfDay(double time)
+        {
+            if (time < 0.2228) // Stars disappear
+                return Enums.TimesOfDay.NightAM;
+            if (time < 0.2439) // Sunflare appears
+                return Enums.TimesOfDay.TwilightAM;
+            if (time < 0.5) // Mid-day
+                return Enums.TimesOfDay.DayAM;
+            if (time < 0.756) // Sunflare disappears
+                return Enums.TimesOfDay.DayPM;
+            if (time < 0.7776) // Stars appear
+                return Enums.TimesOfDay.TwilightPM;
+            return Enums.TimesOfDay.NightPM;
+        }
+
+        public static CameraModes ConvertCameraMode(CameraManager.CameraMode mode)
         {
             switch (mode)
             {
                 case CameraManager.CameraMode.External:
                     {
-                        return CameraMode.External;
+                        return CameraModes.External;
                     }
                 case CameraManager.CameraMode.Flight:
                     {
-                        return CameraMode.Flight;
+                        return CameraModes.Flight;
                     }
                 case CameraManager.CameraMode.Internal:
                     {
-                        return CameraMode.Internal;
+                        return CameraModes.Internal;
                     }
                 case CameraManager.CameraMode.IVA:
                     {
-                        return CameraMode.IVA;
+                        return CameraModes.IVA;
                     }
                 case CameraManager.CameraMode.Map:
                     {
-                        return CameraMode.Map;
+                        return CameraModes.Map;
                     }
                 default:
                     {
@@ -77,53 +123,53 @@ namespace SoundtrackEditor
             }
         }
 
-        public static Enums.Scene ConvertScene(GameScenes scene)
+        public static Enums.Scenes ConvertScene(GameScenes scene)
         {
             switch (scene)
             {
                 case GameScenes.LOADING:
                     {
-                        return Enums.Scene.Loading;
+                        return Enums.Scenes.Loading;
                     }
                 case GameScenes.LOADINGBUFFER:
                     {
-                        return Enums.Scene.LoadingBuffer;
+                        return Enums.Scenes.LoadingBuffer;
                     }
                 case GameScenes.MAINMENU:
                     {
-                        return Enums.Scene.MainMenu;
+                        return Enums.Scenes.MainMenu;
                     }
                 case GameScenes.SETTINGS:
                     {
-                        return Enums.Scene.Settings;
+                        return Enums.Scenes.Settings;
                     }
                 case GameScenes.CREDITS:
                     {
-                        return Enums.Scene.Credits;
+                        return Enums.Scenes.Credits;
                     }
                 case GameScenes.SPACECENTER:
                     {
-                        return Enums.Scene.SpaceCentre;
+                        return Enums.Scenes.SpaceCentre;
                     }
                 case GameScenes.EDITOR:
                     {
-                        return Enums.Scene.VAB;
+                        return Enums.Scenes.VAB;
                     }
                 case GameScenes.FLIGHT:
                     {
-                        return Enums.Scene.Flight;
+                        return Enums.Scenes.Flight;
                     }
                 case GameScenes.TRACKSTATION:
                     {
-                        return Enums.Scene.TrackingStation;
+                        return Enums.Scenes.TrackingStation;
                     }
-                case GameScenes.SPH:
+                /*case GameScenes.SPH:
                     {
                         return Enums.Scene.SPH;
-                    }
+                    }*/
                 case GameScenes.PSYSTEM:
                     {
-                        return Enums.Scene.PSystem;
+                        return Enums.Scenes.PSystem;
                     }
                 default:
                     {
@@ -140,6 +186,8 @@ namespace SoundtrackEditor
         /// <returns></returns>
         public static T Parse<T>(string value) where T : struct, IConvertible
         {
+            // TODO: Disallow & in some cases.
+
             Type genericType = typeof(T);
             if (!genericType.IsEnum)
                 throw new ArgumentException("Type 'T' must be an enum");

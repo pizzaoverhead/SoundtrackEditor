@@ -6,11 +6,12 @@ using UnityEngine;
 
 namespace SoundtrackEditor
 {
-    class Persistor
+    public class Persistor
     {
-        private ConfigNode _config;
-        private string _configSavePath = "GameData/SoundtrackEditor/settings.cfg";
-        public List<Playlist> LoadPlaylists()
+        private static ConfigNode _config;
+        private static string _configSavePath = "Playlists/settings.cfg";
+        //private static string _configSavePath2 = "GameData/SoundtrackEditor/PluginData/settings2.cfg";
+        public static List<Playlist> LoadPlaylists()
         {
             try
             {
@@ -39,16 +40,46 @@ namespace SoundtrackEditor
                             p.loop = bool.Parse(node.GetValue("loop"));
                         if (node.HasValue("shuffle"))
                             p.shuffle = bool.Parse(node.GetValue("shuffle"));
+                        if (node.HasValue("pauseOnGamePause"))
+                        {
+                            p.pauseOnGamePause = bool.Parse(node.GetValue("pauseOnGamePause"));
+                            if (p.pauseOnGamePause)
+                                EventManager.Instance.MonitorPause = true;
+                        }
                         if (node.HasValue("disableAfterPlay"))
                             p.disableAfterPlay = bool.Parse(node.GetValue("disableAfterPlay"));
                         if (node.HasValue("playNext"))
                             p.playNext = node.GetValue("playNext");
+                        if (node.HasValue("playBefore"))
+                            p.playBefore = node.GetValue("playBefore");
+                        if (node.HasValue("playAfter"))
+                            p.playAfter = node.GetValue("playAfter");
                         if (node.HasValue("channel"))
                             p.channel = int.Parse(node.GetValue("channel"));
                         if (node.HasValue("preloadTime"))
                             p.preloadTime = float.Parse(node.GetValue("preloadTime"));
-                        //p.fade = config.GetValue("fade"); TODO
-                        //p.trackFade = config.GetValue("trackFade"); TODO
+                        if (node.HasValue("fade"))
+                        {
+                            p.fade = new Playlist.Fade();
+                            ConfigNode fade = node.GetNode("fade");
+                            if (fade.HasNode("fadeIn"))
+                                p.fade.fadeIn = float.Parse(node.GetValue("fadeIn"));
+                            if (fade.HasNode("fadeOut"))
+                                p.fade.fadeOut = float.Parse(node.GetValue("fadeOut"));
+                            if (fade.HasNode("crossfade"))
+                                p.fade.crossfade = bool.Parse(node.GetValue("crossfade"));
+                        }
+                        if (node.HasValue("trackFade"))
+                        {
+                            p.trackFade = new Playlist.Fade();
+                            ConfigNode trackFade = node.GetNode("trackFade");
+                            if (trackFade.HasNode("fadeIn"))
+                                p.trackFade.fadeIn = float.Parse(node.GetValue("fadeIn"));
+                            if (trackFade.HasNode("fadeOut"))
+                                p.trackFade.fadeOut = float.Parse(node.GetValue("fadeOut"));
+                            if (trackFade.HasNode("crossfade"))
+                                p.trackFade.crossfade = bool.Parse(node.GetValue("crossfade"));
+                        }
 
                         if (node.HasNode("tracks"))
                         {
@@ -62,28 +93,95 @@ namespace SoundtrackEditor
                         {
                             p.playWhen = new Playlist.Prerequisites();
                             ConfigNode playWhen = node.GetNode("playWhen");
-                            if (playWhen.HasValue("scene"))
-                                p.playWhen.scene = Enums.Parse<Enums.Scene>(playWhen.GetValue("scene"));
-                            if (playWhen.HasValue("body"))
-                                p.playWhen.bodyName = playWhen.GetValue("body");
-                            if (playWhen.HasValue("situation"))
-                                p.playWhen.situation = Enums.Parse<Vessel.Situations>(playWhen.GetValue("situation"));
-                            if (playWhen.HasValue("cameraMode"))
-                                p.playWhen.cameraMode = Enums.Parse<Enums.CameraMode>(playWhen.GetValue("cameraMode"));
+
+                            if (playWhen.HasValue("paused"))
+                            {
+                                p.playWhen.paused =  Enums.Parse<Enums.Selector>(playWhen.GetValue("paused"));
+                            }
                             if (playWhen.HasValue("inAtmosphere"))
+                            {
                                 p.playWhen.inAtmosphere = Enums.Parse<Enums.Selector>(playWhen.GetValue("inAtmosphere"));
-                            if (playWhen.HasValue("surfaceVelocity"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("surfaceVelocity"));
-                            if (playWhen.HasValue("surfaceVelocityBelow"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("surfaceVelocityBelow"));
-                            if (playWhen.HasValue("surfaceVelocityAbove"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("surfaceVelocityAbove"));
-                            if (playWhen.HasValue("velocityOrbital"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("velocityOrbital"));
+                                if (p.playWhen.inAtmosphere != Enums.Selector.Either)
+                                    EventManager.Instance.MonitorInAtmosphere = true;
+                            }
+                            if (playWhen.HasValue("timeOfDay"))
+                            {
+                                p.playWhen.timeOfDay = Enums.Parse<Enums.TimesOfDay>(playWhen.GetValue("timeOfDay"));
+                                if (p.playWhen.timeOfDay != Enums.TimesOfDay.Any)
+                                    EventManager.Instance.MonitorTimeOfDay = true;
+                            }
+                            if (playWhen.HasValue("scene"))
+                            {
+                                p.playWhen.scene = Enums.Parse<Enums.Scenes>(playWhen.GetValue("scene"));
+                                if (p.playWhen.scene != Enums.Scenes.Any)
+                                    EventManager.Instance.MonitorScene = true;
+                            }
+                            if (playWhen.HasValue("situation"))
+                            {
+                                p.playWhen.situation = Enums.Parse<Vessel.Situations>(playWhen.GetValue("situation"));
+                                if (p.playWhen.situation != Enums.AnyVesselSituation)
+                                    EventManager.Instance.MonitorSituation = true;
+                            }
+                            if (playWhen.HasValue("cameraMode"))
+                            {
+                                p.playWhen.cameraMode = Enums.Parse<Enums.CameraModes>(playWhen.GetValue("cameraMode"));
+                                if (p.playWhen.cameraMode != Enums.CameraModes.Any)
+                                    EventManager.Instance.MonitorCameraMode = true;
+                            }
+                            if (playWhen.HasValue("bodyName"))
+                            {
+                                p.playWhen.bodyName = playWhen.GetValue("bodyName");
+                                if (p.playWhen.bodyName.Length > 0)
+                                    EventManager.Instance.MonitorBody = true;
+                            }
+                            if (playWhen.HasValue("maxVelocitySurface"))
+                            {
+                                p.playWhen.maxVelocitySurface = float.Parse(playWhen.GetValue("maxVelocitySurface"));
+                                if (p.playWhen.maxVelocitySurface != float.MaxValue)
+                                    EventManager.Instance.AddMaxSurfaceVelocity(p.playWhen.maxVelocitySurface);
+                            }
+                            if (playWhen.HasValue("minVelocitySurface"))
+                            {
+                                p.playWhen.minVelocitySurface = float.Parse(playWhen.GetValue("minVelocitySurface"));
+                                if (p.playWhen.minVelocitySurface != float.MinValue)
+                                    EventManager.Instance.AddMinSurfaceVelocity(p.playWhen.minVelocitySurface);
+                            }
                             if (playWhen.HasValue("maxVelocityOrbital"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("maxVelocityOrbital"));
+                            {
+                                p.playWhen.maxVelocityOrbital = float.Parse(playWhen.GetValue("maxVelocityOrbital"));
+                                if (p.playWhen.maxVelocityOrbital != float.MaxValue)
+                                    EventManager.Instance.AddMaxOrbitalVelocity(p.playWhen.maxVelocityOrbital);
+                            }
                             if (playWhen.HasValue("minVelocityOrbital"))
-                                p.playWhen.surfaceVelocity = float.Parse(playWhen.GetValue("minVelocityOrbital"));
+                            {
+                                p.playWhen.minVelocityOrbital = float.Parse(playWhen.GetValue("minVelocityOrbital"));
+                                if (p.playWhen.minVelocityOrbital != float.MinValue)
+                                    EventManager.Instance.AddMinOrbitalVelocity(p.playWhen.minVelocityOrbital);
+                            }
+                            if (playWhen.HasValue("maxAltitude"))
+                            {
+                                p.playWhen.maxAltitude = float.Parse(playWhen.GetValue("maxAltitude"));
+                                if (p.playWhen.maxAltitude != float.MaxValue)
+                                    EventManager.Instance.AddMaxAltitude(p.playWhen.maxAltitude);
+                            }
+                            if (playWhen.HasValue("minAltitude"))
+                            {
+                                p.playWhen.minAltitude = float.Parse(playWhen.GetValue("minAltitude"));
+                                if (p.playWhen.minAltitude != float.MinValue)
+                                    EventManager.Instance.AddMinAltitude(p.playWhen.minAltitude);
+                            }
+                            if (playWhen.HasValue("maxVesselDistance"))
+                            {
+                                p.playWhen.maxVesselDistance = float.Parse(playWhen.GetValue("maxVesselDistance"));
+                                if (p.playWhen.maxVesselDistance != float.MaxValue)
+                                    EventManager.Instance.AddMaxVesselDistance(p.playWhen.maxVesselDistance);
+                            }
+                            if (playWhen.HasValue("minVesselDistance"))
+                            {
+                                p.playWhen.minVesselDistance = float.Parse(playWhen.GetValue("minAltitude"));
+                                if (p.playWhen.minVesselDistance != float.MinValue)
+                                    EventManager.Instance.AddMinVesselDistance(p.playWhen.minVesselDistance);
+                            }
                         }
 
                         playlists.Add(p);
@@ -101,7 +199,7 @@ namespace SoundtrackEditor
             }
         }
 
-        private List<Playlist> LoadStockPlaylist()
+        private static List<Playlist> LoadStockPlaylist()
         {
             Utils.Log("Loading stock playlists.");
             List<Playlist> playlists = new List<Playlist>();
@@ -121,7 +219,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.VAB | Enums.Scene.SPH
+                    scene = Enums.Scenes.VAB | Enums.Scenes.SPH
                 }
             });
 
@@ -148,8 +246,8 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.Flight,
-                    inAtmosphere = Enums.Selector.No
+                    scene = Enums.Scenes.Flight,
+                    inAtmosphere = Enums.Selector.False
                 }
             });
 
@@ -163,7 +261,7 @@ namespace SoundtrackEditor
                 playWhen = new Playlist.Prerequisites
                 {
                     //scene = Enums.Scene.AstronautComplex TODO
-                    scene = Enums.Scene.PSystem
+                    scene = Enums.Scenes.PSystem
                 }
             });
 
@@ -176,7 +274,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.Credits
+                    scene = Enums.Scenes.Credits
                 }
             });
 
@@ -191,7 +289,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.MainMenu
+                    scene = Enums.Scenes.MainMenu
                 }
             });
 
@@ -205,7 +303,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.SpaceCentre
+                    scene = Enums.Scenes.SpaceCentre
                 }
             };
             playlists.Add(spaceCentreAmbience);
@@ -222,7 +320,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.MainMenu
+                    scene = Enums.Scenes.MainMenu
                 }
             });
 
@@ -236,7 +334,7 @@ namespace SoundtrackEditor
                 playWhen = new Playlist.Prerequisites
                 {
                     // scene = Enums.Scene.MissionControl TODO
-                    scene = Enums.Scene.Loading
+                    scene = Enums.Scenes.Loading
                 }
             });
 
@@ -250,7 +348,7 @@ namespace SoundtrackEditor
                 playWhen = new Playlist.Prerequisites
                 {
                     //scene = Enums.Scene.ResearchComplex TODO
-                    scene = Enums.Scene.LoadingBuffer
+                    scene = Enums.Scenes.LoadingBuffer
                 }
             });
 
@@ -263,7 +361,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.SpaceCentre
+                    scene = Enums.Scenes.SpaceCentre
                 }
             });
 
@@ -276,7 +374,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.SPH
+                    scene = Enums.Scenes.SPH
                 }
             });
 
@@ -289,7 +387,7 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.TrackingStation
+                    scene = Enums.Scenes.TrackingStation
                 }
             });
 
@@ -302,11 +400,90 @@ namespace SoundtrackEditor
                 },
                 playWhen = new Playlist.Prerequisites
                 {
-                    scene = Enums.Scene.VAB
+                    scene = Enums.Scenes.VAB
                 }
             });
 
             return playlists;
+        }
+
+        public static void SavePlaylists(List<Playlist> playlists)
+        {
+            try
+            {
+                ConfigNode settings = new ConfigNode();
+
+                foreach (Playlist pl in playlists)
+                {
+                    ConfigNode n = settings.AddNode("playlist");
+
+                    n.AddValue("name", pl.name);
+                    if (!pl.enabled)
+                        n.AddValue("enabled", pl.enabled);
+                    n.AddValue("loop", pl.loop);
+                    n.AddValue("shuffle", pl.shuffle);
+                    n.AddValue("preloadTime", pl.preloadTime);
+                    n.AddValue("pauseOnGamePause", pl.pauseOnGamePause);
+                    n.AddValue("disableAfterPlay", pl.disableAfterPlay);
+                    n.AddValue("playNext", pl.playNext);
+                    n.AddValue("playBefore", pl.playBefore);
+                    n.AddValue("playAfter", pl.playAfter);
+                    if (pl.channel != 0)
+                        n.AddValue("channel", pl.channel);
+                    n.AddValue("preloadTime", pl.preloadTime);
+
+                    ConfigNode fade = n.AddNode("fade");
+                    fade.AddValue("fadeIn", pl.fade.fadeIn);
+                    fade.AddValue("fadeOut", pl.fade.fadeOut);
+                    fade.AddValue("crossfade", pl.fade.crossfade);
+                    ConfigNode trackFade = n.AddNode("trackFade");
+                    trackFade.AddValue("fadeIn", pl.trackFade.fadeIn);
+                    trackFade.AddValue("fadeOut", pl.trackFade.fadeOut);
+                    trackFade.AddValue("crossfade", pl.trackFade.crossfade);
+
+                    ConfigNode trackNode = n.AddNode("tracks");
+                    foreach (string trackName in pl.tracks)
+                        trackNode.AddValue("track", trackName);
+
+                    ConfigNode preReq = n.AddNode("playWhen");
+                    if (pl.playWhen.paused != Enums.Selector.Either)
+                        preReq.AddValue("paused", pl.playWhen.paused);
+                    if (pl.playWhen.inAtmosphere != Enums.Selector.Either)
+                        preReq.AddValue("inAtmosphere", pl.playWhen.inAtmosphere);
+                    if (pl.playWhen.timeOfDay != Enums.TimesOfDay.Any)
+                        preReq.AddValue("timeOfDay", pl.playWhen.timeOfDay.ToString().Replace(", ", " | "));
+                    if (pl.playWhen.maxVelocitySurface != float.MaxValue)
+                        preReq.AddValue("maxVelocitySurface", pl.playWhen.maxVelocitySurface);
+                    if (pl.playWhen.minVelocitySurface != float.MinValue)
+                        preReq.AddValue("minVelocitySurface", pl.playWhen.minVelocitySurface);
+                    if (pl.playWhen.maxVelocityOrbital != float.MaxValue)
+                        preReq.AddValue("maxVelocityOrbital", pl.playWhen.maxVelocityOrbital);
+                    if (pl.playWhen.minVelocityOrbital != float.MinValue)
+                        preReq.AddValue("minVelocityOrbital", pl.playWhen.minVelocityOrbital);
+                    if (pl.playWhen.maxAltitude != float.MaxValue)
+                        preReq.AddValue("maxAltitude", pl.playWhen.maxAltitude);
+                    if (pl.playWhen.minAltitude != float.MinValue)
+                        preReq.AddValue("minAltitude", pl.playWhen.minAltitude);
+                    if (pl.playWhen.maxVesselDistance != float.MaxValue)
+                        preReq.AddValue("maxVesselDistance", pl.playWhen.maxVesselDistance);
+                    if (pl.playWhen.minVesselDistance != 0)
+                        preReq.AddValue("minVesselDistance", pl.playWhen.minVesselDistance);
+                    if (pl.playWhen.scene != Enums.Scenes.Any)
+                        preReq.AddValue("scene", pl.playWhen.scene.ToString().Replace(", ", " | "));
+                    if (pl.playWhen.situation != Enums.AnyVesselSituation)
+                        preReq.AddValue("situation", pl.playWhen.situation);
+                    if (pl.playWhen.cameraMode != Enums.CameraModes.Any)
+                        preReq.AddValue("cameraMode", pl.playWhen.cameraMode.ToString().Replace(", ", " | "));
+                    if (!string.IsNullOrEmpty(pl.playWhen.bodyName))
+                        preReq.AddValue("bodyName", pl.playWhen.bodyName);
+                }
+
+                settings.Save(_configSavePath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError("[STED] SavePlaylists Error: " + ex.Message);
+            }
         }
 
         /*public void Load()
