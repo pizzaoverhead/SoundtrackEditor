@@ -9,7 +9,7 @@ namespace SoundtrackEditor
     public class Persistor
     {
         private static ConfigNode _config;
-        private static string _configSavePath = "Playlists/settings.cfg";
+        private static string _configSavePath = "Playlists/playlists.cfg";
         //private static string _configSavePath2 = "GameData/SoundtrackEditor/PluginData/settings2.cfg";
         public static List<Playlist> LoadPlaylists()
         {
