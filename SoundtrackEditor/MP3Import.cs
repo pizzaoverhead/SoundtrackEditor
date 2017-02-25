@@ -3,6 +3,7 @@ using System;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using System.Text;
+using System.IO;
 
 public class MP3Import
 {
@@ -93,19 +94,28 @@ public class MP3Import
             intRate = rate.ToInt32();
             intChannels = channels.ToInt32();
             intEncoding = encoding.ToInt32();
-
             MPGImport.mpg123_id3(handle_mpg, out id3v1, out id3v2);
             MPGImport.mpg123_format_none(handle_mpg);
             MPGImport.mpg123_format(handle_mpg, intRate, intChannels, 208);
 
-            Debug.Log("Getting ID3 info");
-            MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
+            string title;
+            if (id3v1 != IntPtr.Zero)
+            {
+                Debug.Log("Getting ID3 info");
+                MPGImport.mpg123_id3v1 v1 = (MPGImport.mpg123_id3v1)Marshal.PtrToStructure(id3v1, typeof(MPGImport.mpg123_id3v1));
+                title = new String(v1.title);
+            }
+            else
+            {
+                title = Path.GetFileNameWithoutExtension(mPath);
+            }
 
             FrameSize = MPGImport.mpg123_outblock(handle_mpg);
             byte[] Buffer = new byte[FrameSize];
             lengthSamples = MPGImport.mpg123_length(handle_mpg);
 
-            myClip = AudioClip.Create(new String(v1.title), lengthSamples, intChannels, intRate, false);
+            Debug.Log("Creating audio clip");
+            myClip = AudioClip.Create(title, lengthSamples, intChannels, intRate, false);
 
             int importIndex = 0;
 
