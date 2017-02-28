@@ -53,7 +53,11 @@ namespace SoundtrackEditor
             {
                 Debug.Log("DBA: " + a.name);
             }*/
-            return GameDatabase.Instance.GetAudioClip(name);
+            AudioClip databaseClip = GameDatabase.Instance.GetAudioClip(name);
+            if (databaseClip == null)
+                Debug.LogWarning("[STED] Unable to find audio file " + name + " on disk or in the game database.");
+
+            return databaseClip;
         }
 
         public static List<AudioFileInfo> GetAvailableFiles()

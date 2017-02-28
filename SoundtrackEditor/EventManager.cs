@@ -138,12 +138,12 @@ namespace SoundtrackEditor
                     {
                         if (_maxSrfVel < v.srf_velocity.magnitude)
                         {
-                            Utils.Log("Above maximum surface velocity");
+                            //Utils.Log("Above maximum surface velocity");
                             changed = true;
                         }
                         if (_minSrfVel > v.srf_velocity.magnitude)
                         {
-                            Utils.Log("Below minimum surface velocity");
+                            //Utils.Log("Below minimum surface velocity");
                             changed = true;
                         }
                     }
@@ -151,12 +151,12 @@ namespace SoundtrackEditor
                     {
                         if (_maxObtVel < v.obt_velocity.magnitude)
                         {
-                            Utils.Log("Above maximum orbital velocity");
+                            //Utils.Log("Above maximum orbital velocity");
                             changed = true;
                         }
                         if (_minObtVel > v.obt_velocity.magnitude)
                         {
-                            Utils.Log("Below minimum orbital velocity");
+                            //Utils.Log("Below minimum orbital velocity");
                             changed = true;
                         }
                     }
@@ -165,12 +165,12 @@ namespace SoundtrackEditor
                     {
                         if (_maxAlt < v.altitude)
                         {
-                            Utils.Log("Above maximum altitude");
+                            //Utils.Log("Above maximum altitude");
                             changed = true;
                         }
                         if (_minAlt > v.altitude)
                         {
-                            Utils.Log("Below minimum altitude");
+                            //Utils.Log("Below minimum altitude");
                             changed = true;
                         }
                     }
