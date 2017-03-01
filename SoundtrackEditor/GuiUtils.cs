@@ -15,10 +15,10 @@ namespace SoundtrackEditor
             GUILayout.EndHorizontal();
         }
 
-        public static float editFloat(string text, float value)
+        /*public static float editFloat(string label, float value)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(text);
+            GUILayout.Label(label);
             GUILayout.FlexibleSpace();
             bool maxVal = value == float.MaxValue;
             bool minVal = value == float.MinValue;
@@ -38,26 +38,44 @@ namespace SoundtrackEditor
             else
                 float.TryParse(v, out f);
             return f;
-        }
+        }*/
 
-        public static string editString(string text, string value)
+        public static string editFloat(string label, string text, out float value)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label(text);
+            GUILayout.Label(label);
+            GUILayout.FlexibleSpace();
+            string newText = GUILayout.TextField(text, GUILayout.Width(200));
+            GUILayout.EndHorizontal();
+            if (String.IsNullOrEmpty(text))
+                value = -float.MinValue;
+            else
+                float.TryParse(newText, out value);
+            //if (text != newText)
+            //{
+                //Debug.Log("####Updated " + label + " to " + value);
+            //}
+            return newText;
+        } 
+
+        public static string editString(string label, string value)
+        {
+            GUILayout.BeginHorizontal();
+            GUILayout.Label(label);
             GUILayout.FlexibleSpace();
             string v = GUILayout.TextField(value, GUILayout.Width(200));
             GUILayout.EndHorizontal();
             return v;
         }
 
-        public static T editEnum<T>(string text, T value) where T : struct, IConvertible
+        public static T editEnum<T>(string label, T value) where T : struct, IConvertible
         {
             Type genericType = typeof(T);
             if (!genericType.IsEnum)
                 throw new ArgumentException("Type 'T' must be an enum");
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(text);
+            GUILayout.Label(label);
             //GUILayout.FlexibleSpace();
             GUILayout.Label(" ");
             foreach (var e in Enum.GetValues(typeof(T)))

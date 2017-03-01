@@ -313,8 +313,15 @@ NullReferenceException: Object reference not set to an instance of an object
                 if (currentClip.name != _previousSeekPosition)
                     _previousSeekPosition = currentClip.name;
                 else
+                {
+                    if (newTime == currentClip.length)
+                    {
+                        // Prevents "An invalid seek position was passed to this function." error.
+                        newTime -= 0.1f;
+                    }
                     if (Math.Abs(speaker.time - newTime) > 1)
                         speaker.time = newTime;
+                }
 
                 TimeSpan endTime = TimeSpan.FromSeconds(currentClip.length);
                 string et = endTime.Hours > 0 ?
@@ -437,9 +444,11 @@ NullReferenceException: Object reference not set to an instance of an object
                     _editorGuiVisible = true;
                     _editingPlaylistOriginal = playlists[i];
                     _editingPlaylist = new Playlist(playlists[i]);
+                    _previousInAtmosphere = playlists[i].playWhen.inAtmosphere;
+                    _previousTimeOfDay = playlists[i].playWhen.timeOfDay;
+                    _previousScene = playlists[i].playWhen.scene;
                     _previousSituation = playlists[i].playWhen.situation;
                     _previousCameraMode = playlists[i].playWhen.cameraMode;
-                    _previousScene = playlists[i].playWhen.scene;
                 }
                 GUILayout.EndHorizontal();
 
@@ -461,8 +470,13 @@ NullReferenceException: Object reference not set to an instance of an object
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(" New "))
             {
-                _editingPlaylist = new Playlist();
                 _editorGuiVisible = true;
+                _editingPlaylist = new Playlist();
+                _previousInAtmosphere = _editingPlaylist.playWhen.inAtmosphere;
+                _previousTimeOfDay = _editingPlaylist.playWhen.timeOfDay;
+                _previousScene = _editingPlaylist.playWhen.scene;
+                _previousSituation = _editingPlaylist.playWhen.situation;
+                _previousCameraMode = _editingPlaylist.playWhen.cameraMode;
             }
             GUILayout.EndHorizontal();
 
@@ -634,6 +648,13 @@ NullReferenceException: Object reference not set to an instance of an object
         private Playlist _editingPlaylistOriginal;
         private Vector2 _playlistPrereqsScrollPosition = Vector2.zero;
         private Vector2 _playlistTrackScrollPosition = Vector2.zero;
+        private string _preloadTimeText = "";
+        private string _maxSrfVelText = "";
+        private string _minSrfVelText = "";
+        private string _maxOrbVelText = "";
+        private string _minOrbVelText = "";
+        private string _maxAltitudeText = "";
+        private string _minAltitudeText = "";
         public void EditorGui(int windowId)
         {
             // TODO: Save off original values.
@@ -679,7 +700,7 @@ NullReferenceException: Object reference not set to an instance of an object
             PlayBeforePicker();
             PlayAfterPicker();
             // TODO: Channel
-            _editingPlaylist.preloadTime = GuiUtils.editFloat("Preload Time (s):", _editingPlaylist.preloadTime);
+            _preloadTimeText = GuiUtils.editFloat("Preload Time (s):", _preloadTimeText, out _editingPlaylist.preloadTime);
             // TODO: Paused
 
             // TODO: Modify playlists in memory
@@ -689,12 +710,14 @@ NullReferenceException: Object reference not set to an instance of an object
             SituationPicker();
             CameraModePicker();
             _editingPlaylist.playWhen.bodyName = GuiUtils.editString("Body Name:", _editingPlaylist.playWhen.bodyName);
-            GuiUtils.editFloat("Max Surface Velocity:", _editingPlaylist.playWhen.maxVelocitySurface); // TODO: "Clear" buttons.
-            GuiUtils.editFloat("Min Surface Velocity:", _editingPlaylist.playWhen.minVelocitySurface);
-            GuiUtils.editFloat("Max Orbital Velocity:", _editingPlaylist.playWhen.maxVelocityOrbital);
-            GuiUtils.editFloat("Min Orbital Velocity:", _editingPlaylist.playWhen.minVelocityOrbital);
-            GuiUtils.editFloat("Max Altitude:", _editingPlaylist.playWhen.maxAltitude);
-            GuiUtils.editFloat("Min Altitude:", _editingPlaylist.playWhen.minAltitude);
+            // TODO: "Clear" buttons.
+
+            _maxSrfVelText = GuiUtils.editFloat("Max Surface Velocity:", _maxSrfVelText, out _editingPlaylist.playWhen.maxVelocitySurface);
+            _minSrfVelText = GuiUtils.editFloat("Min Surface Velocity:", _minSrfVelText, out _editingPlaylist.playWhen.minVelocitySurface);
+            _maxOrbVelText = GuiUtils.editFloat("Max Orbital Velocity:", _maxOrbVelText, out _editingPlaylist.playWhen.maxVelocityOrbital);
+            _minOrbVelText = GuiUtils.editFloat("Min Orbital Velocity:", _minOrbVelText, out _editingPlaylist.playWhen.minVelocityOrbital);
+            _maxAltitudeText = GuiUtils.editFloat("Max Altitude:", _maxAltitudeText, out _editingPlaylist.playWhen.maxAltitude);
+            _minAltitudeText = GuiUtils.editFloat("Min Altitude:", _minAltitudeText, out _editingPlaylist.playWhen.minAltitude);
             GUILayout.EndScrollView(); // _playlistPrereqsScrollPosition
             GUILayout.EndVertical(); // Prereqs column
 
@@ -822,11 +845,17 @@ NullReferenceException: Object reference not set to an instance of an object
             GUI.DragWindow();
         }
 
-        public bool PickerGuiCollapsed(string name, bool sectionExpanded)
+        public bool PickerGuiCollapsed(string name, string selection, bool sectionExpanded)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(name + ":");
             GUILayout.FlexibleSpace();
+
+            if (selection != String.Empty)
+            {
+                GUILayout.Label(" " + selection + " ");
+            }
+
             if (GUILayout.Button("  ...  "))
                 sectionExpanded = true;
             GUILayout.EndHorizontal();
@@ -851,7 +880,7 @@ NullReferenceException: Object reference not set to an instance of an object
                     {
                         if (val == "Any")
                         {
-                            if ((int)_editingPlaylist.playWhen.scene != 0)
+                            if (_editingPlaylist.playWhen.scene != Enums.Scenes.Any)
                                 _editingPlaylist.playWhen.scene = Enums.Scenes.Any;
                             else
                                 _editingPlaylist.playWhen.scene = 0;
@@ -876,7 +905,15 @@ NullReferenceException: Object reference not set to an instance of an object
                 GUILayout.EndVertical();
             }
             else
-                _scenesExpanded = PickerGuiCollapsed("Scene", _scenesExpanded);
+            {
+                string selection;
+                if (_editingPlaylist.playWhen.scene == 0)
+                    selection = "None";
+                else
+                    selection = _editingPlaylist.playWhen.scene.ToString();
+
+                _scenesExpanded = PickerGuiCollapsed("Scene", selection, _scenesExpanded);
+            }
         }
 
         private bool _cameraModeExpanded = false;
@@ -922,7 +959,16 @@ NullReferenceException: Object reference not set to an instance of an object
                 GUILayout.EndVertical();
             }
             else
-                _cameraModeExpanded = PickerGuiCollapsed("Camera Mode", _cameraModeExpanded);
+            {
+
+                string selection;
+                if (_editingPlaylist.playWhen.cameraMode == 0)
+                    selection = "None";
+                else
+                    selection = _editingPlaylist.playWhen.cameraMode.ToString();
+
+                _cameraModeExpanded = PickerGuiCollapsed("Camera Mode", selection, _cameraModeExpanded);
+            }
         }
 
         private bool _situationExpanded = false;
@@ -955,7 +1001,14 @@ NullReferenceException: Object reference not set to an instance of an object
                 GUILayout.EndVertical();
             }
             else
-                _situationExpanded = PickerGuiCollapsed("Situation", _situationExpanded);
+            {
+                string selection;
+                if ((int)_editingPlaylist.playWhen.situation == 0xFF)
+                    selection = "Any";
+                else
+                    selection = _editingPlaylist.playWhen.situation.ToString();
+                _situationExpanded = PickerGuiCollapsed("Situation", selection, _situationExpanded);
+            }
         }
 
         private bool _timeOfDayExpanded = false;
@@ -999,7 +1052,7 @@ NullReferenceException: Object reference not set to an instance of an object
                 GUILayout.EndVertical();
             }
             else
-                _timeOfDayExpanded = PickerGuiCollapsed("Time of Day (KSC)", _timeOfDayExpanded);
+                _timeOfDayExpanded = PickerGuiCollapsed("Time of Day (KSC)", _editingPlaylist.playWhen.timeOfDay.ToString(), _timeOfDayExpanded);
         }
 
         private bool _inAtmosphereExpanded = false;
@@ -1033,22 +1086,24 @@ NullReferenceException: Object reference not set to an instance of an object
                 GUILayout.EndVertical();
             }
             else
-                _inAtmosphereExpanded = PickerGuiCollapsed("In Atmosphere", _inAtmosphereExpanded);
+                _inAtmosphereExpanded = PickerGuiCollapsed("In Atmosphere", _editingPlaylist.playWhen.inAtmosphere.ToString(), _inAtmosphereExpanded);
         }
 
 
         private bool _fadeEditorVisible = false;
         private bool _crossfade = false;
         private float _fadeIn = 0;
+        private string _fadeInText = "";
         private float _fadeOut = 0;
+        private string _fadeOutText = "";
         private void FadeEditor()
         {
             if (_fadeEditorVisible)
             {
                 GUILayout.Label("<b>Fading</b>");
                 GUILayout.BeginVertical();
-                _fadeIn = GuiUtils.editFloat("Fade in time (s):", _fadeIn);
-                _fadeOut = GuiUtils.editFloat("Fade out time (s):", _fadeOut);
+                _fadeInText = GuiUtils.editFloat("Fade in time (s):", _fadeInText, out _fadeIn);
+                _fadeOutText = GuiUtils.editFloat("Fade out time (s):", _fadeOutText, out _fadeOut);
                 _crossfade = GUILayout.Toggle(_crossfade, "Crossfade");
 
                 // Footer
@@ -1129,13 +1184,8 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             else
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Next Playlist");
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(String.IsNullOrEmpty(_editingPlaylist.playNext) ? " None " : _editingPlaylist.playNext);
-                if (GUILayout.Button("  ...  "))
-                    _playNextPickerVisible = true;
-                GUILayout.EndHorizontal();
+                _playNextPickerVisible = PickerGuiCollapsed("Next Playlist",
+                    String.IsNullOrEmpty(_editingPlaylist.playNext) ? "None" : _editingPlaylist.playNext, _playNextPickerVisible);
             }
         }
 
@@ -1150,13 +1200,8 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             else
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Sort This Playlist Before");
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(String.IsNullOrEmpty(_editingPlaylist.playBefore) ? " None " : _editingPlaylist.playBefore);
-                if (GUILayout.Button("  ...  "))
-                    _playBeforePickerVisible = true;
-                GUILayout.EndHorizontal();
+                _playBeforePickerVisible = PickerGuiCollapsed("Sort This Playlist Before",
+                    String.IsNullOrEmpty(_editingPlaylist.playBefore) ? "None" : _editingPlaylist.playBefore, _playBeforePickerVisible);
             }
         }
 
@@ -1171,13 +1216,8 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             else
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Sort This Playlist After");
-                GUILayout.FlexibleSpace();
-                GUILayout.Label(String.IsNullOrEmpty(_editingPlaylist.playAfter) ? " None " : _editingPlaylist.playAfter);
-                if (GUILayout.Button("  ...  "))
-                    _playAfterPickerVisible = true;
-                GUILayout.EndHorizontal();
+                _playAfterPickerVisible = PickerGuiCollapsed("Sort This Playlist After",
+                    String.IsNullOrEmpty(_editingPlaylist.playAfter) ? "None" : _editingPlaylist.playAfter, _playAfterPickerVisible);
             }
         }
 
@@ -1201,13 +1241,13 @@ NullReferenceException: Object reference not set to an instance of an object
             }
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("   Cancel  "))
-                isVisible = false;
             if (GUILayout.Button("   None  "))
             {
                 _chosenPlaylist = null;
                 isVisible = false;
             }
+            if (GUILayout.Button("   Cancel  "))
+                isVisible = false;
             GUILayout.EndHorizontal();
             return isVisible;
         }

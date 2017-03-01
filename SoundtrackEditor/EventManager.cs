@@ -275,13 +275,13 @@ namespace SoundtrackEditor
             GameEvents.onGameStateSave.Add(onGameStateSave);
             GameEvents.onGameStateSaved.Add(onGameStateSaved);*/
             GameEvents.onGameUnpause.Add(onGameUnpause);
-            /*onGUIAdministrationFacilityDespawn
-			onGUIAdministrationFacilitySpawn
-            GameEvents.onGUIApplicationLauncherDestroyed.Add(onGUIApplicationLauncherDestroyed);
-            GameEvents.onGUIApplicationLauncherReady.Add(onGUIApplicationLauncherReady);
+            GameEvents.onGUIAdministrationFacilityDespawn.Add(onGUIAdministrationFacilityDespawn);
+            GameEvents.onGUIAdministrationFacilitySpawn.Add(onGUIAdministrationFacilitySpawn);
+            /*GameEvents.onGUIApplicationLauncherDestroyed.Add(onGUIApplicationLauncherDestroyed);
+            GameEvents.onGUIApplicationLauncherReady.Add(onGUIApplicationLauncherReady);*/
             GameEvents.onGUIAstronautComplexDespawn.Add(onGUIAstronautComplexDespawn);
             GameEvents.onGUIAstronautComplexSpawn.Add(onGUIAstronautComplexSpawn);
-			onGUIEditorToolbarReady
+			/*onGUIEditorToolbarReady
 			onGUIEngineersReportDestroy
 			onGUIEngineersReportReady*/
             //GameEvents.onGUIKSPediaDespawn.Add(onGUIKSPediaDespawn);
@@ -454,12 +454,14 @@ namespace SoundtrackEditor
 
         private void onGamePause()
         {
+            //Utils.Log("Pausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.True;
             if (MonitorPause)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
         private void onGameUnpause()
         {
+            //Utils.Log("Unpausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.False;
             if (MonitorPause)
                 SoundtrackEditor.Instance.OnSituationChanged();
@@ -467,7 +469,7 @@ namespace SoundtrackEditor
 
         private void onGameSceneLoadRequested(GameScenes scene)
         {
-            //Utils.Log("Changing scene: " + scene);
+            //Utils.Log("Loading scene: " + scene);
             if (!SoundtrackEditor.InitialLoadingComplete && scene.Equals(GameScenes.MAINMENU))
                 SoundtrackEditor.InitialLoadingComplete = true;
 
@@ -478,6 +480,7 @@ namespace SoundtrackEditor
 
         private void onGameSceneSwitchRequested(GameEvents.FromToAction<GameScenes, GameScenes> scenes)
         {
+            //Utils.Log("Switching scene: " + scenes.to);
             if (!SoundtrackEditor.InitialLoadingComplete && scenes.to.Equals(GameScenes.MAINMENU))
                 SoundtrackEditor.InitialLoadingComplete = true;
 
@@ -491,17 +494,34 @@ namespace SoundtrackEditor
         private void onGameStateLoad(ConfigNode n) { Utils.Log("#onGameStateLoad"); }
         private void onGameStateSave(ConfigNode n) { Utils.Log("#onGameStateSave"); }
         private void onGameStateSaved(Game g) { Utils.Log("#onGameStateSaved"); }*/
+        
+        private void onGUIAdministrationFacilityDespawn()
+        {
+            //Utils.Log("Leaving administration facility");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
+            if (MonitorScene)
+                SoundtrackEditor.Instance.OnSituationChanged();
+        }
+        private void onGUIAdministrationFacilitySpawn()
+        {
+            //Utils.Log("Entering administration facility");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.AdminFacility;
+            if (MonitorScene)
+                SoundtrackEditor.Instance.OnSituationChanged();
+        }
         /*private void onGUIApplicationLauncherDestroyed() { Utils.Log("#onGUIApplicationLauncherDestroyed"); }
         private void onGUIApplicationLauncherReady() { Utils.Log("#onGUIApplicationLauncherReady"); }*/
         private void onGUIAstronautComplexDespawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.AstronautComplex;
+            //Utils.Log("Leaving astronaut complex");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
         private void onGUIAstronautComplexSpawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
+            //Utils.Log("Entering astronaut complex");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.AstronautComplex;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
@@ -514,13 +534,15 @@ namespace SoundtrackEditor
         private void onGUIMessageSystemReady() { Utils.Log("#onGUIMessageSystemReady"); }*/
         private void onGUIMissionControlDespawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.MissionControl;
+            //Utils.Log("Leaving mission control");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
         private void onGUIMissionControlSpawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
+            //Utils.Log("Entering mission control");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.MissionControl;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
@@ -529,13 +551,15 @@ namespace SoundtrackEditor
         private void onGUIRecoveryDialogSpawn(MissionRecoveryDialog d) { Utils.Log("#onGUIRecoveryDialogSpawn"); }*/
         private void onGUIRnDComplexDespawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.RnDComplex;
+            //Utils.Log("Leaving RnD");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
         private void onGUIRnDComplexSpawn()
         {
-            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.SpaceCentre;
+            //Utils.Log("Entering RnD");
+            SoundtrackEditor.CurrentSituation.scene = Enums.Scenes.RnDComplex;
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }

@@ -25,8 +25,9 @@ namespace SoundtrackEditor
             KSPedia = 0x1000,
             MissionControl = 0x2000,
             RnDComplex = 0x4000,
+            AdminFacility = 0x8000,
             Any = Loading | LoadingBuffer | MainMenu | Settings | Credits | SpaceCentre | VAB | SPH | TrackingStation |
-                Flight | PSystem | AstronautComplex | KSPedia | MissionControl | RnDComplex
+                Flight | PSystem | AstronautComplex | KSPedia | MissionControl | RnDComplex | AdminFacility
         }
 
         public enum Selector

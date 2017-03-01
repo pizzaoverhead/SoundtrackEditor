@@ -426,15 +426,18 @@ namespace SoundtrackEditor
                         n.AddValue("enabled", pl.enabled);
                     n.AddValue("loop", pl.loop);
                     n.AddValue("shuffle", pl.shuffle);
-                    n.AddValue("preloadTime", pl.preloadTime);
+                    if (pl.preloadTime > 0 && pl.preloadTime != float.MaxValue)
+                        n.AddValue("preloadTime", pl.preloadTime);
                     n.AddValue("pauseOnGamePause", pl.pauseOnGamePause);
                     n.AddValue("disableAfterPlay", pl.disableAfterPlay);
-                    n.AddValue("playNext", pl.playNext);
-                    n.AddValue("playBefore", pl.playBefore);
-                    n.AddValue("playAfter", pl.playAfter);
+                    if (!string.IsNullOrEmpty(pl.playNext))
+                        n.AddValue("playNext", pl.playNext);
+                    if (!string.IsNullOrEmpty(pl.playBefore))
+                        n.AddValue("playBefore", pl.playBefore);
+                    if (!string.IsNullOrEmpty(pl.playAfter))
+                        n.AddValue("playAfter", pl.playAfter);
                     if (pl.channel != 0)
                         n.AddValue("channel", pl.channel);
-                    n.AddValue("preloadTime", pl.preloadTime);
 
                     /* Not yet implemented.
                     ConfigNode fade = n.AddNode("fade");
@@ -459,15 +462,15 @@ namespace SoundtrackEditor
                         preReq.AddValue("timeOfDay", pl.playWhen.timeOfDay.ToString().Replace(", ", " | "));
                     if (pl.playWhen.maxVelocitySurface != float.MaxValue)
                         preReq.AddValue("maxVelocitySurface", pl.playWhen.maxVelocitySurface);
-                    if (pl.playWhen.minVelocitySurface != float.MinValue)
+                    if (pl.playWhen.minVelocitySurface != float.MinValue && pl.playWhen.minVelocitySurface != float.MaxValue)
                         preReq.AddValue("minVelocitySurface", pl.playWhen.minVelocitySurface);
                     if (pl.playWhen.maxVelocityOrbital != float.MaxValue)
                         preReq.AddValue("maxVelocityOrbital", pl.playWhen.maxVelocityOrbital);
-                    if (pl.playWhen.minVelocityOrbital != float.MinValue)
+                    if (pl.playWhen.minVelocityOrbital != float.MinValue && pl.playWhen.minVelocityOrbital != float.MaxValue)
                         preReq.AddValue("minVelocityOrbital", pl.playWhen.minVelocityOrbital);
                     if (pl.playWhen.maxAltitude != float.MaxValue)
                         preReq.AddValue("maxAltitude", pl.playWhen.maxAltitude);
-                    if (pl.playWhen.minAltitude != float.MinValue)
+                    if (pl.playWhen.minAltitude != float.MinValue && pl.playWhen.minAltitude != float.MaxValue)
                         preReq.AddValue("minAltitude", pl.playWhen.minAltitude);
                     if (pl.playWhen.maxVesselDistance != float.MaxValue)
                         preReq.AddValue("maxVesselDistance", pl.playWhen.maxVesselDistance);

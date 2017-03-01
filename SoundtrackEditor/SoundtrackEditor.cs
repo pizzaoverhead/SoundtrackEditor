@@ -526,7 +526,13 @@ namespace SoundtrackEditor
             if (CurrentPlaylist.preloadTime > 0)
             {
                 if (CurrentPlaylist.trackIndex < CurrentPlaylist.tracks.Count - 1)
-                    preloadTimer.Interval = Math.Max((Speaker.clip.length - CurrentPlaylist.preloadTime) * 1000, 0);
+                {
+                    float preloadTime = (Speaker.clip.length - CurrentPlaylist.preloadTime) * 1000;
+                    if (preloadTime > 0)
+                    {
+                        preloadTimer.Interval = preloadTime;
+                    }
+                }
             }
 
             Speaker.Play();
