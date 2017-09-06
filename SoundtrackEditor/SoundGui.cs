@@ -176,9 +176,12 @@ namespace SoundtrackEditor
                 GUILayout.Label("<b>Current Situation</b>");
                 GUILayout.Label(Playlist.Prerequisites.PrintSituation());
 
+				// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+				/*
                 Vessel v = Utils.GetNearestVessel();
                 if (v != null)
                     GUILayout.Label("Nearest vessel: " + v);
+				*/
 
                 if (sted.LoadingClip != null)
                     GUILayout.Label("Preloading track " + sted.LoadingClip.name);

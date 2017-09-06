@@ -195,8 +195,11 @@ namespace SoundtrackEditor
             public float minVelocityOrbital = float.MinValue;
             public float maxAltitude = float.MaxValue;
             public float minAltitude = float.MinValue;
+			// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+			/*
             public float maxVesselDistance = float.MaxValue;
             public float minVesselDistance = 0f;
+			*/
 
             public Prerequisites() {}
             public Prerequisites(Prerequisites p)
@@ -381,10 +384,13 @@ namespace SoundtrackEditor
                 return (maxAltitude >= v.altitude) && (minAltitude <= v.altitude);
             }
 
+			// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+			/*
             public bool CheckVesselDistance(Vessel v)
             {
                 return Utils.GetNearestVessel(minVesselDistance, maxVesselDistance, v) != null;
             }
+			*/
 
             public bool CheckInAtmosphere(Vessel v)
             {
@@ -431,7 +437,10 @@ namespace SoundtrackEditor
                     if (!CheckOrbitalVelocity(v)) return false;
                     if (!CheckSurfaceVelocity(v)) return false;
                     if (!CheckAltitude(v)) return false;
+					// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+					/*
                     if (!CheckVesselDistance(v)) return false;
+					*/
                     if (!CheckInAtmosphere(v)) return false;
 
                     //if (p.playAfter
@@ -464,8 +473,11 @@ namespace SoundtrackEditor
                         (this.minVelocityOrbital == p.minVelocityOrbital) &&
                         (this.maxAltitude == p.maxAltitude) &&
                         (this.minAltitude == p.minAltitude) &&
+						// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+						/*
                         (this.maxVesselDistance == p.maxVesselDistance) &&
                         (this.minVesselDistance == p.minVesselDistance) &&
+						*/
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -490,8 +502,11 @@ namespace SoundtrackEditor
                         (this.minVelocityOrbital == p.minVelocityOrbital) &&
                         (this.maxAltitude == p.maxAltitude) &&
                         (this.minAltitude == p.minAltitude) &&
+						// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+						/*
                         (this.maxVesselDistance == p.maxVesselDistance) &&
                         (this.minVesselDistance == p.minVesselDistance) &&
+						*/
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -513,8 +528,11 @@ namespace SoundtrackEditor
                     G = minVelocityOrbital,
                     H = maxAltitude,
                     I = minAltitude,
+					// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+					/*
                     J = maxVesselDistance,
                     K = minVesselDistance,
+					*/
                     L = scene,
                     M = situation,
                     N = cameraMode,

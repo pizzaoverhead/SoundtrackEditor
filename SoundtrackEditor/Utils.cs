@@ -91,6 +91,8 @@ namespace SoundtrackEditor
             return Path.GetDirectoryName(path);
         }
 
+		// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+		/*
         public static Vessel GetNearestVessel()
         {
             if (HighLogic.LoadedScene == GameScenes.LOADING)
@@ -120,6 +122,7 @@ namespace SoundtrackEditor
             }
             return nearestVessel;
         }
+		*/
 
         /*public static Shader GetShader()
         {

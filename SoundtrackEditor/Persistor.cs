@@ -174,6 +174,8 @@ namespace SoundtrackEditor
                                 if (p.playWhen.minAltitude != float.MinValue)
                                     EventManager.Instance.AddMinAltitude(p.playWhen.minAltitude);
                             }
+							// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+							/*
                             if (playWhen.HasValue("maxVesselDistance"))
                             {
                                 p.playWhen.maxVesselDistance = float.Parse(playWhen.GetValue("maxVesselDistance"));
@@ -186,6 +188,7 @@ namespace SoundtrackEditor
                                 if (p.playWhen.minVesselDistance != float.MinValue)
                                     EventManager.Instance.AddMinVesselDistance(p.playWhen.minVesselDistance);
                             }
+							*/
                         }
 
                         playlists.Add(p);
@@ -472,10 +475,13 @@ namespace SoundtrackEditor
                         preReq.AddValue("maxAltitude", pl.playWhen.maxAltitude);
                     if (pl.playWhen.minAltitude != float.MinValue && pl.playWhen.minAltitude != float.MaxValue)
                         preReq.AddValue("minAltitude", pl.playWhen.minAltitude);
+					// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+					/*
                     if (pl.playWhen.maxVesselDistance != float.MaxValue)
                         preReq.AddValue("maxVesselDistance", pl.playWhen.maxVesselDistance);
                     if (pl.playWhen.minVesselDistance != 0)
                         preReq.AddValue("minVesselDistance", pl.playWhen.minVesselDistance);
+					*/
                     if (pl.playWhen.scene != Enums.Scenes.Any)
                         preReq.AddValue("scene", pl.playWhen.scene.ToString().Replace(", ", " | "));
                     if (pl.playWhen.situation != Enums.AnyVesselSituation)

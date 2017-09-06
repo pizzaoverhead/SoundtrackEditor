@@ -73,6 +73,8 @@ namespace SoundtrackEditor
         }
 
         // Nearest vessel
+		// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+		/*
         public Vessel NearestVessel;
         public bool MonitorNearestVessel { get; private set; }
         private float _maxVesselDist = float.MaxValue;
@@ -89,6 +91,7 @@ namespace SoundtrackEditor
                 MonitorNearestVessel = true;
             _minVesselDist = Math.Max(_minVesselDist, minVesselDist);
         }
+		*/
 
         public static EventManager Instance { get; private set; }
 
@@ -175,6 +178,8 @@ namespace SoundtrackEditor
                         }
                     }
 
+					// TODO: fix so absence of any other vessel doesn't prevent soundtrack playback
+					/*
                     if (MonitorNearestVessel)
                     {
                         Vessel newVessel = Utils.GetNearestVessel(_minVesselDist, _maxVesselDist, v);
@@ -184,6 +189,7 @@ namespace SoundtrackEditor
                             changed = true;
                         }
                     }
+					*/
                 }
             }
             else if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
