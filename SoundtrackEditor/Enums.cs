@@ -22,12 +22,14 @@ namespace SoundtrackEditor
             Flight = 0x200,
             PSystem = 0x400,
             AstronautComplex = 0x800,
+			/* // TODO - Code tracking if entered from EDITOR or SPACECENTER and despawn from GUI accordingly. Note: "KSPedia" commented out of list below, line 32.
             KSPedia = 0x1000,
+			*/
             MissionControl = 0x2000,
             RnDComplex = 0x4000,
             AdminFacility = 0x8000,
             Any = Loading | LoadingBuffer | MainMenu | Settings | Credits | SpaceCentre | VAB | SPH | TrackingStation |
-                Flight | PSystem | AstronautComplex | KSPedia | MissionControl | RnDComplex | AdminFacility
+				Flight | PSystem | AstronautComplex |/* KSPedia |*/ MissionControl | RnDComplex | AdminFacility
         }
 
         public enum Selector
