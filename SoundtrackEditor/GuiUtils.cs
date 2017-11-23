@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Text.RegularExpressions;
 
 namespace SoundtrackEditor
 {
@@ -50,7 +51,12 @@ namespace SoundtrackEditor
             if (String.IsNullOrEmpty(text))
                 value = -float.MinValue;
             else
+            {
+                Regex numericOnly = new Regex(@"[^\d.-]");
+                newText = numericOnly.Replace(newText, "");
+
                 float.TryParse(newText, out value);
+            }
             //if (text != newText)
             //{
                 //Debug.Log("####Updated " + label + " to " + value);

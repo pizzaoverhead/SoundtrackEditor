@@ -472,6 +472,7 @@ NullReferenceException: Object reference not set to an instance of an object
             {
                 _editorGuiVisible = true;
                 _editingPlaylist = new Playlist();
+                _editingPlaylistOriginal = null;
                 _previousInAtmosphere = _editingPlaylist.playWhen.inAtmosphere;
                 _previousTimeOfDay = _editingPlaylist.playWhen.timeOfDay;
                 _previousScene = _editingPlaylist.playWhen.scene;

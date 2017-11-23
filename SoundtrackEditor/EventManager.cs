@@ -112,6 +112,9 @@ namespace SoundtrackEditor
         }
 
         private CelestialBody _homeBody;
+        private double _previousSrfVel = 0;
+        private double _previousObtVel = 0;
+        private double _previousAlt = 0;
         private void UpdateSituation()
         {
             bool changed = false;
@@ -132,53 +135,55 @@ namespace SoundtrackEditor
                         }
                     }
 
-                    //FlightGlobals.currentMainBody.maxAtmosphereAltitude
-
+                    // For surface velocity, orbital velocity and altitude, check if we crossed the monitored point going in either direction.
                     if (MonitorSurfaceVelocity)
                     {
-                        if (_maxSrfVel < v.srf_velocity.magnitude)
+                        if ((v.srf_velocity.magnitude > _maxSrfVel && v.srf_velocity.magnitude < _previousSrfVel) ||
+                            (v.srf_velocity.magnitude < _maxSrfVel && v.srf_velocity.magnitude > _previousSrfVel))
                         {
-                            //Utils.Log("Above maximum surface velocity");
                             changed = true;
                         }
-                        if (_minSrfVel > v.srf_velocity.magnitude)
+                        if ((v.srf_velocity.magnitude > _minSrfVel && v.srf_velocity.magnitude < _previousSrfVel) ||
+                            (v.srf_velocity.magnitude < _minSrfVel && v.srf_velocity.magnitude > _previousSrfVel))
                         {
-                            //Utils.Log("Below minimum surface velocity");
                             changed = true;
                         }
+                        _previousSrfVel = v.srf_velocity.magnitude;
                     }
                     if (MonitorOrbitalVelocity)
                     {
-                        if (_maxObtVel < v.obt_velocity.magnitude)
+                        if ((v.obt_velocity.magnitude > _maxObtVel && v.obt_velocity.magnitude < _previousObtVel) ||
+                            (v.obt_velocity.magnitude < _maxObtVel && v.obt_velocity.magnitude > _previousObtVel))
                         {
-                            //Utils.Log("Above maximum orbital velocity");
                             changed = true;
                         }
-                        if (_minObtVel > v.obt_velocity.magnitude)
+                        if ((v.obt_velocity.magnitude > _minObtVel && v.obt_velocity.magnitude < _previousObtVel) ||
+                            (v.obt_velocity.magnitude < _minObtVel && v.obt_velocity.magnitude > _previousObtVel))
                         {
-                            //Utils.Log("Below minimum orbital velocity");
                             changed = true;
                         }
+                        _previousObtVel = v.obt_velocity.magnitude;
                     }
 
                     if (MonitorAltitude)
                     {
-                        if (_maxAlt < v.altitude)
+                        if ((v.altitude > _maxAlt && v.altitude < _previousAlt) ||
+                            (v.altitude < _maxAlt && v.altitude > _previousAlt))
                         {
-                            //Utils.Log("Above maximum altitude");
                             changed = true;
                         }
-                        if (_minAlt > v.altitude)
+                        if ((v.altitude > _minAlt && v.altitude < _previousAlt) ||
+                            (v.altitude < _minAlt && v.altitude > _previousAlt))
                         {
-                            //Utils.Log("Below minimum altitude");
                             changed = true;
                         }
+                        _previousAlt = v.altitude;
                     }
 
                     if (MonitorNearestVessel)
                     {
                         Vessel newVessel = Utils.GetNearestVessel(_minVesselDist, _maxVesselDist, v);
-                        if (NearestVessel != newVessel)
+                        if (newVessel != null && NearestVessel != newVessel)
                         {
                             NearestVessel = newVessel;
                             changed = true;
@@ -457,14 +462,20 @@ namespace SoundtrackEditor
             //Utils.Log("Pausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.True;
             if (MonitorPause)
+            {
                 SoundtrackEditor.Instance.OnSituationChanged();
+                SoundtrackEditor.Instance.OnGamePause();
+            }
         }
         private void onGameUnpause()
         {
             //Utils.Log("Unpausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.False;
             if (MonitorPause)
+            {
                 SoundtrackEditor.Instance.OnSituationChanged();
+                SoundtrackEditor.Instance.OnGameUnpause();
+            }
         }
 
         private void onGameSceneLoadRequested(GameScenes scene)

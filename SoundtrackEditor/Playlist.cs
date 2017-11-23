@@ -338,7 +338,7 @@ namespace SoundtrackEditor
                     var curMode = Enums.ConvertCameraMode(CameraManager.Instance.currentCameraMode);
                     if ((curMode & cameraMode) != curMode)
                     {
-                        Utils.Log("Prereq failed: Expected camMode " + cameraMode + ", but was " + curMode);
+                        //Utils.Log("Prereq failed: Expected camMode " + cameraMode + ", but was " + curMode);
                         return false;
                     }
                 }
@@ -350,7 +350,7 @@ namespace SoundtrackEditor
                 // Body name
                 if (bodyName.Length > 0 && !bodyName.Equals(v.mainBody.name))
                 {
-                    Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
+                    //Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
                     return false;
                 }
                 return true;
@@ -360,7 +360,7 @@ namespace SoundtrackEditor
             {
                 if ((v.situation & situation) != v.situation)
                 {
-                    Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
+                    //Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
                     return false;
                 }
                 return true;
@@ -373,7 +373,7 @@ namespace SoundtrackEditor
 
             public bool CheckSurfaceVelocity(Vessel v)
             {
-                return (maxVelocityOrbital >= v.srf_velocity.magnitude) && (minVelocityOrbital <= v.srf_velocity.magnitude);
+                return (maxVelocitySurface >= v.srf_velocity.magnitude) && (minVelocitySurface <= v.srf_velocity.magnitude);
             }
 
             public bool CheckAltitude(Vessel v)
@@ -416,29 +416,38 @@ namespace SoundtrackEditor
 
             public bool PrerequisitesMet()
             {
-                if (!CheckPaused()) return false;
-                if (!CheckScene()) return false;
-                if (!CheckCameraMode()) return false;
-                if (!CheckTimeOfDay()) return false;
-
-                // TODO - Throws exceptions before the initial loading screen is completed.
-                Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
-
-                if (v != null)
+                try
                 {
-                    if (!CheckBodyName(v)) return false;
-                    if (!CheckSituation(v)) return false;
-                    if (!CheckOrbitalVelocity(v)) return false;
-                    if (!CheckSurfaceVelocity(v)) return false;
-                    if (!CheckAltitude(v)) return false;
-                    if (!CheckVesselDistance(v)) return false;
-                    if (!CheckInAtmosphere(v)) return false;
+                    if (!CheckPaused()) return false;
+                    if (!CheckScene()) return false;
+                    if (!CheckCameraMode()) return false;
+                    if (!CheckTimeOfDay()) return false;
 
-                    //if (p.playAfter
-                    //if (p.playNext
+                    // TODO - Throws exceptions before the initial loading screen is completed.
+                    Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
+
+                    if (v != null)
+                    {
+                        if (!CheckBodyName(v)) return false;
+                        if (!CheckSituation(v)) return false;
+
+                        if (!CheckOrbitalVelocity(v)) return false;
+                        if (!CheckSurfaceVelocity(v)) return false;
+                        if (!CheckAltitude(v)) return false;
+                        if (!CheckVesselDistance(v)) return false;
+                        if (!CheckInAtmosphere(v)) return false;
+
+                        //if (p.playAfter
+                        //if (p.playNext
+                    }
+
+                    return true;
                 }
-
-                return true;
+                catch (Exception ex)
+                {
+                    UnityEngine.Debug.LogError("[STED] PrerequisitesMet Error: " + ex.Message);
+                }
+                return false;
             }
 
             #region Equality operator

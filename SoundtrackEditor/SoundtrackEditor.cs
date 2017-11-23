@@ -286,7 +286,7 @@ namespace SoundtrackEditor
 
             SortActivePlaylists();
 
-            if (!ActivePlaylists.Equals(CurrentPlaylist))
+            if (!ActivePlaylists.Contains(CurrentPlaylist))
             {
                 CurrentPlaylist = ActivePlaylists[0];
                 //Utils.Log("Switching to playlist " + ActivePlaylists[0].name + " of " + ActivePlaylists.Count + " matching playlists.");
