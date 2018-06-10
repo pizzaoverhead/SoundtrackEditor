@@ -90,6 +90,9 @@ namespace SoundtrackEditor
             _minVesselDist = Math.Max(_minVesselDist, minVesselDist);
         }
 
+        // State: Active, Inactive, Dead
+        public bool MonitorVesselState { get; set; }
+
         public static EventManager Instance { get; private set; }
 
         public EventManager()
@@ -115,6 +118,7 @@ namespace SoundtrackEditor
         private double _previousSrfVel = 0;
         private double _previousObtVel = 0;
         private double _previousAlt = 0;
+        private Enums.VesselState _previousVesselState = 0;
         private void UpdateSituation()
         {
             bool changed = false;
@@ -186,6 +190,16 @@ namespace SoundtrackEditor
                         if (newVessel != null && NearestVessel != newVessel)
                         {
                             NearestVessel = newVessel;
+                            changed = true;
+                        }
+                    }
+
+                    if (MonitorVesselState)
+                    {
+                        if (_previousVesselState != Enums.ConvertVesselState(v.state))
+                        {
+                            Utils.Log("Vessel state changed");
+                            _previousVesselState = Enums.ConvertVesselState(v.state);
                             changed = true;
                         }
                     }

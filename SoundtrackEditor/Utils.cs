@@ -118,6 +118,10 @@ namespace SoundtrackEditor
                     }
                 }
             }
+            else
+            {
+                return v;
+            }
             return nearestVessel;
         }
 

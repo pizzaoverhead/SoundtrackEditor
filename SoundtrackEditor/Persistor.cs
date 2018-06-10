@@ -186,6 +186,12 @@ namespace SoundtrackEditor
                                 if (p.playWhen.minVesselDistance != float.MinValue)
                                     EventManager.Instance.AddMinVesselDistance(p.playWhen.minVesselDistance);
                             }
+                            if (playWhen.HasValue("vesselState"))
+                            {
+                                p.playWhen.vesselState = Enums.Parse<Enums.VesselState>(playWhen.GetValue("vesselState"));
+                                if (p.playWhen.vesselState != Enums.VesselState.Any && p.playWhen.vesselState != 0)
+                                    EventManager.Instance.MonitorVesselState = true;
+                            }
                         }
 
                         playlists.Add(p);
@@ -476,6 +482,8 @@ namespace SoundtrackEditor
                         preReq.AddValue("maxVesselDistance", pl.playWhen.maxVesselDistance);
                     if (pl.playWhen.minVesselDistance != 0)
                         preReq.AddValue("minVesselDistance", pl.playWhen.minVesselDistance);
+                    if (pl.playWhen.vesselState != Enums.VesselState.Any && pl.playWhen.vesselState != 0)
+                        preReq.AddValue("vesselSituation", pl.playWhen.vesselState);
                     if (pl.playWhen.scene != Enums.Scenes.Any)
                         preReq.AddValue("scene", pl.playWhen.scene.ToString().Replace(", ", " | "));
                     if (pl.playWhen.situation != Enums.AnyVesselSituation)

@@ -41,7 +41,7 @@ namespace SoundtrackEditor
             return f;
         }*/
 
-        public static string editFloat(string label, string text, out float value)
+        public static string editFloat(string label, string text, out float value, float defaultValue)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label);
@@ -49,7 +49,7 @@ namespace SoundtrackEditor
             string newText = GUILayout.TextField(text, GUILayout.Width(200));
             GUILayout.EndHorizontal();
             if (String.IsNullOrEmpty(text))
-                value = -float.MinValue;
+                value = defaultValue;
             else
             {
                 Regex numericOnly = new Regex(@"[^\d.-]");

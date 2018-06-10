@@ -50,6 +50,38 @@ namespace SoundtrackEditor
             Any = Flight | Map | External | IVA | Internal
         }
 
+        public static CameraModes ConvertCameraMode(CameraManager.CameraMode mode)
+        {
+            switch (mode)
+            {
+                case CameraManager.CameraMode.External:
+                    {
+                        return CameraModes.External;
+                    }
+                case CameraManager.CameraMode.Flight:
+                    {
+                        return CameraModes.Flight;
+                    }
+                case CameraManager.CameraMode.Internal:
+                    {
+                        return CameraModes.Internal;
+                    }
+                case CameraManager.CameraMode.IVA:
+                    {
+                        return CameraModes.IVA;
+                    }
+                case CameraManager.CameraMode.Map:
+                    {
+                        return CameraModes.Map;
+                    }
+                default:
+                    {
+                        throw new ArgumentException("Soundtrack Editor: Invalid camera mode: " + mode +
+                            "\nCheck for an updated version of Soundtrack Editor.");
+                    }
+            }
+        }
+
         public static Vessel.Situations AnyVesselSituation = Vessel.Situations.DOCKED | Vessel.Situations.ESCAPING | Vessel.Situations.FLYING |
             Vessel.Situations.LANDED | Vessel.Situations.ORBITING | Vessel.Situations.PRELAUNCH | Vessel.Situations.SPLASHED | Vessel.Situations.SUB_ORBITAL;
 
@@ -92,33 +124,34 @@ namespace SoundtrackEditor
             return Enums.TimesOfDay.NightPM;
         }
 
-        public static CameraModes ConvertCameraMode(CameraManager.CameraMode mode)
+        [Flags]
+        public enum VesselState
         {
-            switch (mode)
+            Inactive = 0x1,
+            Active = 0x2,
+            Dead = 0x4,
+            Any = Inactive | Active | Dead
+        }
+
+        public static Enums.VesselState ConvertVesselState(Vessel.State state)
+        {
+            switch (state)
             {
-                case CameraManager.CameraMode.External:
+                case Vessel.State.INACTIVE:
                     {
-                        return CameraModes.External;
+                        return Enums.VesselState.Inactive;
                     }
-                case CameraManager.CameraMode.Flight:
+                case Vessel.State.ACTIVE:
                     {
-                        return CameraModes.Flight;
+                        return Enums.VesselState.Active;
                     }
-                case CameraManager.CameraMode.Internal:
+                case Vessel.State.DEAD:
                     {
-                        return CameraModes.Internal;
-                    }
-                case CameraManager.CameraMode.IVA:
-                    {
-                        return CameraModes.IVA;
-                    }
-                case CameraManager.CameraMode.Map:
-                    {
-                        return CameraModes.Map;
+                        return Enums.VesselState.Dead;
                     }
                 default:
                     {
-                        throw new ArgumentException("Soundtrack Editor: Invalid camera mode: " + mode +
+                        throw new ArgumentException("Soundtrack Editor: Invalid vessel state: " + state +
                             "\nCheck for an updated version of Soundtrack Editor.");
                     }
             }

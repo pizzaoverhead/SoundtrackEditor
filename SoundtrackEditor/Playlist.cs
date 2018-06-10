@@ -197,6 +197,7 @@ namespace SoundtrackEditor
             public float minAltitude = float.MinValue;
             public float maxVesselDistance = float.MaxValue;
             public float minVesselDistance = 0f;
+            public Enums.VesselState vesselState = Enums.VesselState.Any;
 
             public Prerequisites() {}
             public Prerequisites(Prerequisites p)
@@ -214,6 +215,7 @@ namespace SoundtrackEditor
                 minVelocityOrbital = p.minVelocityOrbital;
                 maxAltitude = p.maxAltitude;
                 minAltitude = p.minAltitude;
+                vesselState = p.vesselState;
             }
 
             // TODO: Make sure any new fields are added to Equals, the CTOR and the persistor.
@@ -284,39 +286,42 @@ namespace SoundtrackEditor
                     "Body name:\t\t" + (bodyName.Length > 0 ? bodyName : "Any") + "\r\n" +
                     "Situation:\t" + SituationToText(situation) + "\r\n" +
                     "Max Orbital Velocity:\t" + (maxVelocityOrbital == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
-                    "Min Orbital Velocity:\t" + (minVelocityOrbital == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
-                    "Max Surface Velocity:\t" + (maxVelocitySurface == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
-                    "Min Surface Velocity:\t" + (minVelocitySurface == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
-                    "Max Altitude:\t\t" + (maxAltitude == float.MaxValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
-                    "Min Altitude:\t\t" + (minAltitude == float.MinValue ? "None" : maxVelocityOrbital.ToString()) + "\r\n" +
+                    "Min Orbital Velocity:\t" + (minVelocityOrbital == float.MinValue ? "None" : minVelocityOrbital.ToString()) + "\r\n" +
+                    "Max Surface Velocity:\t" + (maxVelocitySurface == float.MaxValue ? "None" : maxVelocitySurface.ToString()) + "\r\n" +
+                    "Min Surface Velocity:\t" + (minVelocitySurface == float.MinValue ? "None" : minVelocitySurface.ToString()) + "\r\n" +
+                    "Max Altitude:\t\t" + (maxAltitude == float.MaxValue ? "None" : maxAltitude.ToString()) + "\r\n" +
+                    "Min Altitude:\t\t" + (minAltitude == float.MinValue ? "None" : minAltitude.ToString()) + "\r\n" +
+                    "Vessel state:\t\t\t" + vesselState + "\r\n" +
                     "In Atmosphere:\t\t" + inAtmosphere + "\r\n" + 
                     "Time Of Day:\t\t" + timeOfDay;
             }
 
+            private static StringBuilder situationSB = new StringBuilder();
             public static string PrintSituation()
             {
-                string message =
-                    "Scene:\t\t\t" + Enum.GetName(typeof(Enums.Scenes), SoundtrackEditor.CurrentSituation.scene) + "\r\n" +
-                    "Camera mode:\t\t" + (CameraManager.Instance == null ? "No camera" : CameraManager.Instance.currentCameraMode.ToString()) + "\r\n" +
-                    "Paused:\t\t\t" + SoundtrackEditor.CurrentSituation.paused + "\r\n";
+                situationSB.Length = 0; // StringBuilder.Clear() not available in .NET 3.5.
+                situationSB.Append("Scene:\t\t\t").AppendLine(Enum.GetName(typeof(Enums.Scenes), SoundtrackEditor.CurrentSituation.scene))
+                    .Append("Camera mode:\t\t").AppendLine(CameraManager.Instance == null ? "No camera" : CameraManager.Instance.currentCameraMode.ToString())
+                    .Append("Paused:\t\t\t").AppendLine(SoundtrackEditor.CurrentSituation.paused.ToString());
 
-                if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
-                    message += "Time Of Day:\t\t" + SoundtrackEditor.CurrentSituation.timeOfDay + "\r\n";
+                //if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
+                situationSB.Append("Time Of Day:\t\t").AppendLine(SoundtrackEditor.CurrentSituation.timeOfDay.ToString());
 
                 Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
                 if (v != null)
                 {
-                    message += "Body name:\t\t" + v.mainBody.name + "\r\n" +
-                    "Situation:\t\t\t" + v.situation + "\r\n" +
-                    "Orbital velocity:\t\t" + v.obt_velocity.magnitude + "\r\n" +
-                    "Surface velocity:\t\t" + v.srf_velocity.magnitude + "\r\n" +
-                    "Altitude:\t\t\t" + v.altitude + "\r\n" +
-                    "In Atmosphere:\t\t" + (v.atmDensity > 0);
+                    situationSB.Append("Body name:\t\t").AppendLine(v.mainBody.name)
+                    .Append("Situation:\t\t\t").AppendLine(v.situation.ToString())
+                    .Append("Orbital velocity:\t\t").AppendLine(v.obt_velocity.magnitude.ToString())
+                    .Append("Surface velocity:\t\t").AppendLine(v.srf_velocity.magnitude.ToString())
+                    .Append("Altitude:\t\t\t").AppendLine(v.altitude.ToString())
+                    .Append("In Atmosphere:\t\t").AppendLine((v.atmDensity > 0).ToString())
+                    .Append("State:\t\t").AppendLine(v.state.ToString());
                 }
                 else
-                    message += "Vessel:\t\t\tNo vessel";
+                    situationSB.AppendLine("Vessel:\t\t\tNo vessel");
 
-                return message;
+                return situationSB.ToString();
             }
 
             public bool CheckPaused()
@@ -398,19 +403,28 @@ namespace SoundtrackEditor
                 return true;
             }
 
+            public bool CheckVesselState(Vessel v)
+            {
+                Enums.VesselState currentState = Enums.ConvertVesselState(v.state);
+                if ((currentState & vesselState) != currentState)
+                {
+                    //Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
+                    return false;
+                }
+                return true;
+            }
+
             private CelestialBody _homeBody;
             public bool CheckTimeOfDay()
             {
-                if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
-                {
-                    if (_homeBody == null)
-                        _homeBody = FlightGlobals.GetHomeBody();
-                    double localTime = Sun.Instance.GetLocalTimeAtPosition(Utils.KscLatitude, Utils.KscLongitude, _homeBody);
-                    Enums.TimesOfDay tod = Enums.TimeToTimeOfDay(localTime);
+                if (_homeBody == null)
+                    _homeBody = FlightGlobals.GetHomeBody();
+                double localTime = Sun.Instance.GetLocalTimeAtPosition(Utils.KscLatitude, Utils.KscLongitude, _homeBody);
+                Enums.TimesOfDay tod = Enums.TimeToTimeOfDay(localTime);
 
-                    if ((tod & timeOfDay) != tod)
-                        return false;
-                }
+                if ((tod & timeOfDay) != tod)
+                    return false;
+
                 return true;
             }
 
@@ -436,6 +450,7 @@ namespace SoundtrackEditor
                         if (!CheckAltitude(v)) return false;
                         if (!CheckVesselDistance(v)) return false;
                         if (!CheckInAtmosphere(v)) return false;
+                        if (!CheckVesselState(v)) return false;
 
                         //if (p.playAfter
                         //if (p.playNext
@@ -475,6 +490,7 @@ namespace SoundtrackEditor
                         (this.minAltitude == p.minAltitude) &&
                         (this.maxVesselDistance == p.maxVesselDistance) &&
                         (this.minVesselDistance == p.minVesselDistance) &&
+                        (this.vesselState == p.vesselState) &&
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -501,6 +517,7 @@ namespace SoundtrackEditor
                         (this.minAltitude == p.minAltitude) &&
                         (this.maxVesselDistance == p.maxVesselDistance) &&
                         (this.minVesselDistance == p.minVesselDistance) &&
+                        (this.vesselState == p.vesselState) &&
                         (this.scene == p.scene) &&
                         (this.situation == p.situation) &&
                         (this.cameraMode == p.cameraMode) &&
@@ -524,10 +541,11 @@ namespace SoundtrackEditor
                     I = minAltitude,
                     J = maxVesselDistance,
                     K = minVesselDistance,
-                    L = scene,
-                    M = situation,
-                    N = cameraMode,
-                    O = bodyName
+                    L = vesselState,
+                    M = scene,
+                    N = situation,
+                    O = cameraMode,
+                    P = bodyName
                 }.GetHashCode();
             }
             #endregion Equality operator
