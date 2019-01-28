@@ -9,7 +9,7 @@ namespace SoundtrackEditor
 {
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class GuiManager : MonoBehaviour
-    {// ☰ ∞ 
+    {// ☰ ∞ ■ ► ▮▮
         // GUI window location and sizes.
         protected Rect mainWindowPos = new Rect(Screen.width / 10, Screen.height / 20f, 400f, 10f);
         protected Rect playbackWindowPos = new Rect((Screen.width / 2) - 115, Screen.height / 10, 230f, 10f);
@@ -443,19 +443,37 @@ NullReferenceException: Object reference not set to an instance of an object
                 if (GUILayout.Button(isExpanded ? " - " : " + "))
                     _expandedPlaylists[playlistName] = !isExpanded;
 
-                GUILayout.Label("<b>" + playlistName + (sted.CurrentPlaylist == playlists[i] ? " ►" : "") + " </b>");
+                string label;
+                if (sted.CurrentPlaylist == playlists[i])
+                    label = string.Format("<b>{0} ►</b>", playlistName);
+                else if (sted.ActivePlaylists.Contains(playlists[i]))
+                    label = string.Format("<b>{0} ☑</b>", playlistName);
+                else
+                    label = string.Format("<b>{0}</b>", playlistName);
+                GUILayout.Label(label);
+
                 GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Edit"))
                 {
                     _editorGuiVisible = true;
                     _editingPlaylistOriginal = playlists[i];
                     _editingPlaylist = new Playlist(playlists[i]);
+
                     _previousInAtmosphere = playlists[i].playWhen.inAtmosphere;
                     _previousTimeOfDay = playlists[i].playWhen.timeOfDay;
                     _previousScene = playlists[i].playWhen.scene;
                     _previousSituation = playlists[i].playWhen.situation;
                     _previousCameraMode = playlists[i].playWhen.cameraMode;
                     _previousVesselState = playlists[i].playWhen.vesselState;
+
+                    // Load initial string values.
+                    _preloadTimeText = playlists[i].preloadTime.ToString();
+                    _maxSrfVelText = playlists[i].playWhen.maxVelocitySurface == float.MaxValue ? "" : playlists[i].playWhen.maxVelocitySurface.ToString();
+                    _minSrfVelText = playlists[i].playWhen.minVelocitySurface == float.MinValue ? "" : playlists[i].playWhen.minVelocitySurface.ToString();
+                    _maxOrbVelText = playlists[i].playWhen.maxVelocityOrbital == float.MaxValue ? "" : playlists[i].playWhen.maxVelocityOrbital.ToString();
+                    _minOrbVelText = playlists[i].playWhen.minVelocityOrbital == float.MinValue ? "" : playlists[i].playWhen.minVelocityOrbital.ToString();
+                    _maxAltitudeText = playlists[i].playWhen.maxAltitude == float.MaxValue ? "" : playlists[i].playWhen.maxAltitude.ToString();
+                    _minAltitudeText = playlists[i].playWhen.minAltitude == float.MinValue ? "" : playlists[i].playWhen.minAltitude.ToString();
                 }
                 GUILayout.EndHorizontal();
 
@@ -475,7 +493,7 @@ NullReferenceException: Object reference not set to an instance of an object
             GUILayout.EndScrollView();
 
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button(" New Playlist "))
+            if (GUILayout.Button("New Playlist"))
             {
                 _editorGuiVisible = true;
                 _editingPlaylist = new Playlist();
@@ -485,6 +503,15 @@ NullReferenceException: Object reference not set to an instance of an object
                 _previousScene = _editingPlaylist.playWhen.scene;
                 _previousSituation = _editingPlaylist.playWhen.situation;
                 _previousCameraMode = _editingPlaylist.playWhen.cameraMode;
+
+                // Clear text values from the previous playlist.
+                _preloadTimeText = "";
+                _maxSrfVelText = "";
+                _minSrfVelText = "";
+                _maxOrbVelText = "";
+                _minOrbVelText = "";
+                _maxAltitudeText = "";
+                _minAltitudeText = "";
             }
             GUILayout.EndHorizontal();
 
@@ -723,12 +750,12 @@ NullReferenceException: Object reference not set to an instance of an object
             VesselStatePicker();
             // TODO: "Clear" buttons.
 
-            _maxSrfVelText = GuiUtils.editFloat("Max Surface Velocity:", _maxSrfVelText, out _editingPlaylist.playWhen.maxVelocitySurface, float.MaxValue);
-            _minSrfVelText = GuiUtils.editFloat("Min Surface Velocity:", _minSrfVelText, out _editingPlaylist.playWhen.minVelocitySurface, float.MinValue);
-            _maxOrbVelText = GuiUtils.editFloat("Max Orbital Velocity:", _maxOrbVelText, out _editingPlaylist.playWhen.maxVelocityOrbital, float.MaxValue);
-            _minOrbVelText = GuiUtils.editFloat("Min Orbital Velocity:", _minOrbVelText, out _editingPlaylist.playWhen.minVelocityOrbital, float.MinValue);
-            _maxAltitudeText = GuiUtils.editFloat("Max Altitude:", _maxAltitudeText, out _editingPlaylist.playWhen.maxAltitude, float.MaxValue);
-            _minAltitudeText = GuiUtils.editFloat("Min Altitude:", _minAltitudeText, out _editingPlaylist.playWhen.minAltitude, float.MinValue);
+            _maxSrfVelText = GuiUtils.editFloat("Max Surface Velocity (m/s):", _maxSrfVelText, out _editingPlaylist.playWhen.maxVelocitySurface, float.MaxValue);
+            _minSrfVelText = GuiUtils.editFloat("Min Surface Velocity (m/s):", _minSrfVelText, out _editingPlaylist.playWhen.minVelocitySurface, float.MinValue);
+            _maxOrbVelText = GuiUtils.editFloat("Max Orbital Velocity (m/s):", _maxOrbVelText, out _editingPlaylist.playWhen.maxVelocityOrbital, float.MaxValue);
+            _minOrbVelText = GuiUtils.editFloat("Min Orbital Velocity (m/s):", _minOrbVelText, out _editingPlaylist.playWhen.minVelocityOrbital, float.MinValue);
+            _maxAltitudeText = GuiUtils.editFloat("Max Altitude (m above sea level):", _maxAltitudeText, out _editingPlaylist.playWhen.maxAltitude, float.MaxValue);
+            _minAltitudeText = GuiUtils.editFloat("Min Altitude (m above sea level):", _minAltitudeText, out _editingPlaylist.playWhen.minAltitude, float.MinValue);
 
             GUILayout.EndScrollView(); // _playlistPrereqsScrollPosition
             GUILayout.EndVertical(); // Prereqs column
@@ -831,8 +858,10 @@ NullReferenceException: Object reference not set to an instance of an object
                 }
                 else
                     sted.Playlists.Add(_editingPlaylist);
+                EventManager.Instance.TrackEventsForPlaylist(_editingPlaylist);
                 _editingPlaylist = null;
                 Persistor.SavePlaylists(sted.Playlists);
+
             }
             if (GUILayout.Button(" Cancel "))
             {
@@ -903,6 +932,11 @@ NullReferenceException: Object reference not set to an instance of an object
                         }
                         else
                             _editingPlaylist.playWhen.scene = _editingPlaylist.playWhen.scene ^ scene;
+
+                        // Clear unused flags.
+                        // TODO: Test with "Any"
+                        //_editingPlaylist.playWhen.scene &= ~Enums.Scenes.LoadingBuffer;
+                        //_editingPlaylist.playWhen.scene &= ~Enums.Scenes.PSystem;
                     }
                 }
 
@@ -1023,7 +1057,7 @@ NullReferenceException: Object reference not set to an instance of an object
                     selection = "Any";
                 else
                     selection = _editingPlaylist.playWhen.situation.ToString();
-                _situationExpanded = PickerGuiCollapsed("Situation", selection, _situationExpanded);
+                _situationExpanded = PickerGuiCollapsed("Vessel Situation", selection, _situationExpanded);
             }
         }
 
