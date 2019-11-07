@@ -102,7 +102,7 @@ namespace SoundtrackEditor
         {
             Vessel nearestVessel = null;
             double nearestRange = double.MaxValue;
-            if (v)
+            if (v && FlightGlobals.Vessels.Count > 1)
             {
                 Vector3d vesselPos = v.GetWorldPos3D();
                 for (int i = FlightGlobals.Vessels.Count - 1; i >= 0; --i)
@@ -117,6 +117,10 @@ namespace SoundtrackEditor
                         nearestVessel = FlightGlobals.Vessels[i];
                     }
                 }
+            }
+            else
+            {
+                return v;
             }
             return nearestVessel;
         }

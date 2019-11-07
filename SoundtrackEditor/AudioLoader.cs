@@ -87,7 +87,7 @@ namespace SoundtrackEditor
                 Utils.Log("Loading Unity clip");
                 // Load the audio clip into memory.
                 WWW www = new WWW("file://" + filePath);
-                AudioClip clip = www.audioClip;
+                AudioClip clip = UnityEngine.WWWAudioExtensions.GetAudioClip(www);
                 clip.name = Path.GetFileNameWithoutExtension(filePath);
                 Utils.Log("Clip name: " + clip.name + ", load state: " + clip.loadState);
                 return clip;

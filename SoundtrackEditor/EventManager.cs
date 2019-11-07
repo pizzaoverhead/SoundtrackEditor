@@ -90,6 +90,45 @@ namespace SoundtrackEditor
             _minVesselDist = Math.Max(_minVesselDist, minVesselDist);
         }
 
+        // State: Active, Inactive, Dead
+        public bool MonitorVesselState { get; set; }
+
+        public void TrackEventsForPlaylist(Playlist p)
+        {
+            if (p.pauseOnGamePause == true)
+                MonitorPause = true;
+            if (p.playWhen.inAtmosphere != Enums.Selector.Either)
+                MonitorInAtmosphere = true;
+            if (p.playWhen.timeOfDay != Enums.TimesOfDay.Any)
+                MonitorTimeOfDay = true;
+            if (p.playWhen.scene != Enums.Scenes.Any)
+                MonitorScene = true;
+            if (p.playWhen.situation != Enums.AnyVesselSituation)
+                MonitorSituation = true;
+            if (p.playWhen.cameraMode != Enums.CameraModes.Any)
+                MonitorCameraMode = true;
+            if (p.playWhen.bodyName.Length > 0)
+                MonitorBody = true;
+            if (p.playWhen.maxVelocitySurface != float.MaxValue)
+                AddMaxSurfaceVelocity(p.playWhen.maxVelocitySurface);
+            if (p.playWhen.minVelocitySurface != float.MinValue)
+                AddMinSurfaceVelocity(p.playWhen.minVelocitySurface);
+            if (p.playWhen.maxVelocityOrbital != float.MaxValue)
+                AddMaxOrbitalVelocity(p.playWhen.maxVelocityOrbital);
+            if (p.playWhen.minVelocityOrbital != float.MinValue)
+                AddMinOrbitalVelocity(p.playWhen.minVelocityOrbital);
+            if (p.playWhen.maxAltitude != float.MaxValue)
+                AddMaxAltitude(p.playWhen.maxAltitude);
+            if (p.playWhen.minAltitude != float.MinValue)
+                AddMinAltitude(p.playWhen.minAltitude);
+            if (p.playWhen.maxVesselDistance != float.MaxValue)
+                AddMaxVesselDistance(p.playWhen.maxVesselDistance);
+            if (p.playWhen.minVesselDistance != float.MinValue)
+                AddMinVesselDistance(p.playWhen.minVesselDistance);
+            if (p.playWhen.vesselState != Enums.VesselState.Any && p.playWhen.vesselState != 0)
+                MonitorVesselState = true;
+        }
+
         public static EventManager Instance { get; private set; }
 
         public EventManager()
@@ -112,81 +151,26 @@ namespace SoundtrackEditor
         }
 
         private CelestialBody _homeBody;
+        private double _previousSrfVel = 0;
+        private double _previousObtVel = 0;
+        private double _previousAlt = 0;
+        private Enums.VesselState _previousVesselState = 0;
         private void UpdateSituation()
         {
             bool changed = false;
             // Throws exceptions before the initial loading screen is completed.
             if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.Flight)
             {
-                Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
-                if (v != null)
-                {
-                    Enums.Selector inAtmosphere = v.atmDensity > 0 ? Enums.Selector.True : Enums.Selector.False;
-                    if (SoundtrackEditor.CurrentSituation.inAtmosphere != inAtmosphere)
-                    {
-                        SoundtrackEditor.CurrentSituation.inAtmosphere = inAtmosphere;
-                        if (MonitorInAtmosphere)
-                        {
-                            Utils.Log("In atmosphere changed");
-                            changed = true;
-                        }
-                    }
-
-                    //FlightGlobals.currentMainBody.maxAtmosphereAltitude
-
-                    if (MonitorSurfaceVelocity)
-                    {
-                        if (_maxSrfVel < v.srf_velocity.magnitude)
-                        {
-                            //Utils.Log("Above maximum surface velocity");
-                            changed = true;
-                        }
-                        if (_minSrfVel > v.srf_velocity.magnitude)
-                        {
-                            //Utils.Log("Below minimum surface velocity");
-                            changed = true;
-                        }
-                    }
-                    if (MonitorOrbitalVelocity)
-                    {
-                        if (_maxObtVel < v.obt_velocity.magnitude)
-                        {
-                            //Utils.Log("Above maximum orbital velocity");
-                            changed = true;
-                        }
-                        if (_minObtVel > v.obt_velocity.magnitude)
-                        {
-                            //Utils.Log("Below minimum orbital velocity");
-                            changed = true;
-                        }
-                    }
-
-                    if (MonitorAltitude)
-                    {
-                        if (_maxAlt < v.altitude)
-                        {
-                            //Utils.Log("Above maximum altitude");
-                            changed = true;
-                        }
-                        if (_minAlt > v.altitude)
-                        {
-                            //Utils.Log("Below minimum altitude");
-                            changed = true;
-                        }
-                    }
-
-                    if (MonitorNearestVessel)
-                    {
-                        Vessel newVessel = Utils.GetNearestVessel(_minVesselDist, _maxVesselDist, v);
-                        if (NearestVessel != newVessel)
-                        {
-                            NearestVessel = newVessel;
-                            changed = true;
-                        }
-                    }
-                }
+                if (IsFlightSituationChanged())
+                    changed = true;
             }
-            else if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre)
+            else if (SoundtrackEditor.CurrentSituation.scene != Enums.Scenes.SpaceCentre)
+            {
+                SoundtrackEditor.CurrentSituation.paused = Enums.Selector.False;
+            }
+
+            if (SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.SpaceCentre ||
+                SoundtrackEditor.CurrentSituation.scene == Enums.Scenes.Flight)
             {
                 if (MonitorTimeOfDay)
                 {
@@ -202,13 +186,94 @@ namespace SoundtrackEditor
                     }
                 }
             }
-            else
-            {
-                SoundtrackEditor.CurrentSituation.paused = Enums.Selector.False;
-            }
 
             if (changed)
                 SoundtrackEditor.Instance.OnSituationChanged();
+        }
+
+        private bool IsFlightSituationChanged()
+        {
+            bool changed = false;
+            Vessel v = SoundtrackEditor.InitialLoadingComplete ? FlightGlobals.ActiveVessel : null;
+            if (v != null)
+            {
+                Enums.Selector inAtmosphere = v.atmDensity > 0 ? Enums.Selector.True : Enums.Selector.False;
+                if (SoundtrackEditor.CurrentSituation.inAtmosphere != inAtmosphere)
+                {
+                    SoundtrackEditor.CurrentSituation.inAtmosphere = inAtmosphere;
+                    if (MonitorInAtmosphere)
+                    {
+                        Utils.Log("In atmosphere changed");
+                        changed = true;
+                    }
+                }
+
+                // For surface velocity, orbital velocity and altitude, check if we crossed the monitored point going in either direction.
+                if (MonitorSurfaceVelocity)
+                {
+                    if ((v.srf_velocity.magnitude > _maxSrfVel && v.srf_velocity.magnitude < _previousSrfVel) ||
+                        (v.srf_velocity.magnitude < _maxSrfVel && v.srf_velocity.magnitude > _previousSrfVel))
+                    {
+                        changed = true;
+                    }
+                    if ((v.srf_velocity.magnitude > _minSrfVel && v.srf_velocity.magnitude < _previousSrfVel) ||
+                        (v.srf_velocity.magnitude < _minSrfVel && v.srf_velocity.magnitude > _previousSrfVel))
+                    {
+                        changed = true;
+                    }
+                    _previousSrfVel = v.srf_velocity.magnitude;
+                }
+                if (MonitorOrbitalVelocity)
+                {
+                    if ((v.obt_velocity.magnitude > _maxObtVel && v.obt_velocity.magnitude < _previousObtVel) ||
+                        (v.obt_velocity.magnitude < _maxObtVel && v.obt_velocity.magnitude > _previousObtVel))
+                    {
+                        changed = true;
+                    }
+                    if ((v.obt_velocity.magnitude > _minObtVel && v.obt_velocity.magnitude < _previousObtVel) ||
+                        (v.obt_velocity.magnitude < _minObtVel && v.obt_velocity.magnitude > _previousObtVel))
+                    {
+                        changed = true;
+                    }
+                    _previousObtVel = v.obt_velocity.magnitude;
+                }
+
+                if (MonitorAltitude)
+                {
+                    if ((v.altitude > _maxAlt && v.altitude < _previousAlt) ||
+                        (v.altitude < _maxAlt && v.altitude > _previousAlt))
+                    {
+                        changed = true;
+                    }
+                    if ((v.altitude > _minAlt && v.altitude < _previousAlt) ||
+                        (v.altitude < _minAlt && v.altitude > _previousAlt))
+                    {
+                        changed = true;
+                    }
+                    _previousAlt = v.altitude;
+                }
+
+                if (MonitorNearestVessel)
+                {
+                    Vessel newVessel = Utils.GetNearestVessel(_minVesselDist, _maxVesselDist, v);
+                    if (newVessel != null && NearestVessel != newVessel)
+                    {
+                        NearestVessel = newVessel;
+                        changed = true;
+                    }
+                }
+
+                if (MonitorVesselState)
+                {
+                    if (_previousVesselState != Enums.ConvertVesselState(v.state))
+                    {
+                        Utils.Log("Vessel state changed");
+                        _previousVesselState = Enums.ConvertVesselState(v.state);
+                        changed = true;
+                    }
+                }
+            }
+            return changed;
         }
         
         internal void AddEvents()
@@ -457,14 +522,20 @@ namespace SoundtrackEditor
             //Utils.Log("Pausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.True;
             if (MonitorPause)
+            {
                 SoundtrackEditor.Instance.OnSituationChanged();
+                SoundtrackEditor.Instance.OnGamePause();
+            }
         }
         private void onGameUnpause()
         {
             //Utils.Log("Unpausing");
             SoundtrackEditor.CurrentSituation.paused = Enums.Selector.False;
             if (MonitorPause)
+            {
                 SoundtrackEditor.Instance.OnSituationChanged();
+                SoundtrackEditor.Instance.OnGameUnpause();
+            }
         }
 
         private void onGameSceneLoadRequested(GameScenes scene)
@@ -525,9 +596,10 @@ namespace SoundtrackEditor
             if (MonitorScene)
                 SoundtrackEditor.Instance.OnSituationChanged();
         }
-        //private void onGUIKSPediaSpawn() {}
 
+        //private void onGUIKSPediaSpawn() { }
         //private void onGUIKSPediaDespawn() {}
+
         /*private void onGUILaunchScreenDespawn() { Utils.Log("#onGUILaunchScreenDespawn"); }
         private void onGUILaunchScreenSpawn(GameEvents.VesselSpawnInfo i) { Utils.Log("#onGUILaunchScreenSpawn, profile name: " + i.profileName); }
         private void onGUILaunchScreenVesselSelected(ShipTemplate t) { Utils.Log("#onGUILaunchScreenVesselSelected: " + t.shipName); }

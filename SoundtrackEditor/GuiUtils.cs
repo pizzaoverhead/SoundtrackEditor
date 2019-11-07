@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using System;
+using System.Text.RegularExpressions;
 
 namespace SoundtrackEditor
 {
@@ -40,7 +41,7 @@ namespace SoundtrackEditor
             return f;
         }*/
 
-        public static string editFloat(string label, string text, out float value)
+        public static string editFloat(string label, string text, out float value, float defaultValue)
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label(label);
@@ -48,9 +49,14 @@ namespace SoundtrackEditor
             string newText = GUILayout.TextField(text, GUILayout.Width(200));
             GUILayout.EndHorizontal();
             if (String.IsNullOrEmpty(text))
-                value = -float.MinValue;
+                value = defaultValue;
             else
+            {
+                Regex numericOnly = new Regex(@"[^\d.-]");
+                newText = numericOnly.Replace(newText, "");
+
                 float.TryParse(newText, out value);
+            }
             //if (text != newText)
             //{
                 //Debug.Log("####Updated " + label + " to " + value);

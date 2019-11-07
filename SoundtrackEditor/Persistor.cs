@@ -105,90 +105,67 @@ namespace SoundtrackEditor
                             if (playWhen.HasValue("inAtmosphere"))
                             {
                                 p.playWhen.inAtmosphere = Enums.Parse<Enums.Selector>(playWhen.GetValue("inAtmosphere"));
-                                if (p.playWhen.inAtmosphere != Enums.Selector.Either)
-                                    EventManager.Instance.MonitorInAtmosphere = true;
                             }
                             if (playWhen.HasValue("timeOfDay"))
                             {
                                 p.playWhen.timeOfDay = Enums.Parse<Enums.TimesOfDay>(playWhen.GetValue("timeOfDay"));
-                                if (p.playWhen.timeOfDay != Enums.TimesOfDay.Any)
-                                    EventManager.Instance.MonitorTimeOfDay = true;
                             }
                             if (playWhen.HasValue("scene"))
                             {
                                 p.playWhen.scene = Enums.Parse<Enums.Scenes>(playWhen.GetValue("scene"));
-                                if (p.playWhen.scene != Enums.Scenes.Any)
-                                    EventManager.Instance.MonitorScene = true;
                             }
                             if (playWhen.HasValue("situation"))
                             {
                                 p.playWhen.situation = Enums.Parse<Vessel.Situations>(playWhen.GetValue("situation"));
-                                if (p.playWhen.situation != Enums.AnyVesselSituation)
-                                    EventManager.Instance.MonitorSituation = true;
                             }
                             if (playWhen.HasValue("cameraMode"))
                             {
                                 p.playWhen.cameraMode = Enums.Parse<Enums.CameraModes>(playWhen.GetValue("cameraMode"));
-                                if (p.playWhen.cameraMode != Enums.CameraModes.Any)
-                                    EventManager.Instance.MonitorCameraMode = true;
                             }
                             if (playWhen.HasValue("bodyName"))
                             {
                                 p.playWhen.bodyName = playWhen.GetValue("bodyName");
-                                if (p.playWhen.bodyName.Length > 0)
-                                    EventManager.Instance.MonitorBody = true;
                             }
                             if (playWhen.HasValue("maxVelocitySurface"))
                             {
                                 p.playWhen.maxVelocitySurface = float.Parse(playWhen.GetValue("maxVelocitySurface"));
-                                if (p.playWhen.maxVelocitySurface != float.MaxValue)
-                                    EventManager.Instance.AddMaxSurfaceVelocity(p.playWhen.maxVelocitySurface);
                             }
                             if (playWhen.HasValue("minVelocitySurface"))
                             {
                                 p.playWhen.minVelocitySurface = float.Parse(playWhen.GetValue("minVelocitySurface"));
-                                if (p.playWhen.minVelocitySurface != float.MinValue)
-                                    EventManager.Instance.AddMinSurfaceVelocity(p.playWhen.minVelocitySurface);
                             }
                             if (playWhen.HasValue("maxVelocityOrbital"))
                             {
                                 p.playWhen.maxVelocityOrbital = float.Parse(playWhen.GetValue("maxVelocityOrbital"));
-                                if (p.playWhen.maxVelocityOrbital != float.MaxValue)
-                                    EventManager.Instance.AddMaxOrbitalVelocity(p.playWhen.maxVelocityOrbital);
                             }
                             if (playWhen.HasValue("minVelocityOrbital"))
                             {
                                 p.playWhen.minVelocityOrbital = float.Parse(playWhen.GetValue("minVelocityOrbital"));
-                                if (p.playWhen.minVelocityOrbital != float.MinValue)
-                                    EventManager.Instance.AddMinOrbitalVelocity(p.playWhen.minVelocityOrbital);
                             }
                             if (playWhen.HasValue("maxAltitude"))
                             {
                                 p.playWhen.maxAltitude = float.Parse(playWhen.GetValue("maxAltitude"));
-                                if (p.playWhen.maxAltitude != float.MaxValue)
-                                    EventManager.Instance.AddMaxAltitude(p.playWhen.maxAltitude);
                             }
                             if (playWhen.HasValue("minAltitude"))
                             {
                                 p.playWhen.minAltitude = float.Parse(playWhen.GetValue("minAltitude"));
-                                if (p.playWhen.minAltitude != float.MinValue)
-                                    EventManager.Instance.AddMinAltitude(p.playWhen.minAltitude);
                             }
                             if (playWhen.HasValue("maxVesselDistance"))
                             {
                                 p.playWhen.maxVesselDistance = float.Parse(playWhen.GetValue("maxVesselDistance"));
-                                if (p.playWhen.maxVesselDistance != float.MaxValue)
-                                    EventManager.Instance.AddMaxVesselDistance(p.playWhen.maxVesselDistance);
                             }
                             if (playWhen.HasValue("minVesselDistance"))
                             {
                                 p.playWhen.minVesselDistance = float.Parse(playWhen.GetValue("minAltitude"));
-                                if (p.playWhen.minVesselDistance != float.MinValue)
-                                    EventManager.Instance.AddMinVesselDistance(p.playWhen.minVesselDistance);
+                            }
+                            if (playWhen.HasValue("vesselState"))
+                            {
+                                p.playWhen.vesselState = Enums.Parse<Enums.VesselState>(playWhen.GetValue("vesselState"));
                             }
                         }
 
                         playlists.Add(p);
+                        EventManager.Instance.TrackEventsForPlaylist(p);
                     }
                 }
 
@@ -476,6 +453,8 @@ namespace SoundtrackEditor
                         preReq.AddValue("maxVesselDistance", pl.playWhen.maxVesselDistance);
                     if (pl.playWhen.minVesselDistance != 0)
                         preReq.AddValue("minVesselDistance", pl.playWhen.minVesselDistance);
+                    if (pl.playWhen.vesselState != Enums.VesselState.Any && pl.playWhen.vesselState != 0)
+                        preReq.AddValue("vesselSituation", pl.playWhen.vesselState);
                     if (pl.playWhen.scene != Enums.Scenes.Any)
                         preReq.AddValue("scene", pl.playWhen.scene.ToString().Replace(", ", " | "));
                     if (pl.playWhen.situation != Enums.AnyVesselSituation)

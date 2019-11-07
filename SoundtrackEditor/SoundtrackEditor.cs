@@ -19,31 +19,20 @@ using KSP.UI.Screens;//required for ApplicationLauncherButton type
 
 // Main: Make GUI for debugging/viewing state.
 
-// TODO: Pause music when the game pauses.
-// TODO: Don't change tracks just because the camera view changed.
-
 // TODO: Multichannel sound.
 // TODO: Ensure preloading takes into account pausing/playlist changing.
 // TODO: Merge playlists when multiple are valid. Play non-shuffled tracks first, then fill with the rest.
-// TODO: Unload any unused stock tracks.
-// TODO: Only check the situation for things playlists are actually interested in.
 
 // Idea: Play main theme for big milestones: First time reaching orbit, munar flag etc.
-
-// Working: Continue playing track across scenes.
 
 namespace SoundtrackEditor
 {
     [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class SoundtrackEditor : MonoBehaviour
     {
-        // TODO: Find time of day, play night sounds.
-        //SunLight sl = (SunLight)FindObjectOfType(typeof(SunLight));
-        //float x = sl.timeOfTheDay;
         MusicLogic music;
-        // Create a new empty audio clip to replace the stock ones when they are disabled.
-        AudioClip emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false);
-        public static Playlist.Prerequisites CurrentSituation = new Playlist.Prerequisites() { scene = Enums.Scenes.Loading };
+        AudioClip emptyTrack;
+        public static Playlist.Prerequisites CurrentSituation;
         public List<Playlist> Playlists = new List<Playlist>();
         public List<Playlist> ActivePlaylists; // Currently selected for use.
         public Playlist CurrentPlaylist;
@@ -51,9 +40,8 @@ namespace SoundtrackEditor
         public AudioClip CurrentClip;
         public AudioClip PreloadClip;
         public static bool InitialLoadingComplete = false; // Whether we have reached the main menu yet during this session.
-        private System.Timers.Timer preloadTimer = new System.Timers.Timer();
+        private System.Timers.Timer preloadTimer;
         private Fader fader;
-        //private EventManager _eventManager = new EventManager();
 
         public static SoundtrackEditor Instance { get; private set; }
 
@@ -62,22 +50,14 @@ namespace SoundtrackEditor
             Instance = this;
             music = MusicLogic.fetch;
 
-            preloadTimer.Elapsed += new System.Timers.ElapsedEventHandler(preloadTimer_Elapsed);
-
             //Utils.Log("# OS Version: " + Environment.OSVersion + ", Platform: " + Environment.OSVersion.Platform);
             //DeleteAllStock();
 
             DontDestroyOnLoad(gameObject);
 
-            /*Load();
-            UnloadUnusedTracks();
+            //UnloadUnusedTracks();
 
-            // Remove positional effects.
-            music.audio1.panLevel = 0;
-            music.audio1.dopplerLevel = 0;
-            music.audio2.panLevel = 0;
-            music.audio2.dopplerLevel = 0;*/
-
+            emptyTrack = AudioClip.Create("none", 44100, 1, 44100, false);
             UnloadStockMusicPlayer();
 
             /*for (int i = 0; i < Enum.GetNames(typeof(Enums.Channel)).Length; i++)
@@ -96,12 +76,15 @@ namespace SoundtrackEditor
 
             // TODO: Change volume on unpause or main menu.
 
+            preloadTimer = new System.Timers.Timer();
+            preloadTimer.Elapsed += new System.Timers.ElapsedEventHandler(preloadTimer_Elapsed);
+            // Create a new empty audio clip to replace the stock ones when they are disabled.
+            CurrentSituation = new Playlist.Prerequisites() { scene = Enums.Scenes.Loading };
             EventManager.Instance.AddEvents();
 
             // Set up test playlists.
             //SoundTest soundTest = new SoundTest();
             //SoundTest.CreatePlaylists(Playlists);
-
             Playlists = Persistor.LoadPlaylists();
         }
 
@@ -225,8 +208,16 @@ namespace SoundtrackEditor
         private bool _loading = false;
         public void Update()
         {
-            if (LoadingClip != null && LoadingClip.loadState == AudioDataLoadState.Loaded)
-                PlayClip(LoadingClip);
+            if (LoadingClip != null)
+            {
+                if (LoadingClip.loadState == AudioDataLoadState.Loaded)
+                    PlayClip(LoadingClip);
+                else
+                {
+                    // This must be called repeatedly until the track is fully loaded.
+                    LoadingClip.LoadAudioData();
+                }
+            }
 
             UpdateCurrentTrack();
             fader.Fade();
@@ -257,8 +248,8 @@ namespace SoundtrackEditor
             {
                 if (Speaker.clip.loadState != AudioDataLoadState.Loaded)
                 {
-                    //Utils.Log("Loading...");
                     _loading = true;
+                    Speaker.clip.LoadAudioData();
                 }
                 else
                 {
@@ -280,13 +271,15 @@ namespace SoundtrackEditor
             if (ActivePlaylists == null || ActivePlaylists.Count == 0)
             {
                 StopPlayback();
+                Speaker.clip = null;
+                CurrentClip = null;
                 CurrentPlaylist = null;
                 return;
             }
 
             SortActivePlaylists();
 
-            if (!ActivePlaylists.Equals(CurrentPlaylist))
+            if (!ActivePlaylists.Contains(CurrentPlaylist))
             {
                 CurrentPlaylist = ActivePlaylists[0];
                 //Utils.Log("Switching to playlist " + ActivePlaylists[0].name + " of " + ActivePlaylists.Count + " matching playlists.");
@@ -485,7 +478,7 @@ namespace SoundtrackEditor
         {
             if (clip == null)
             {
-                Debug.LogError("[STED] PlayClip: Unabled to load clip");
+                Debug.LogError("[STED] PlayClip: Unable to load clip");
                 return;
             }
             if (clip.loadState != AudioDataLoadState.Loaded)
