@@ -1,0 +1,19 @@
+ChangeLog
+
+	Fixes by Linuxgurugamer:
+
+	Fixed node value being saved in Persisor.cs, line 457, was saving the vesselState as a vesselSituation
+	Fixed a nullref when entering the editor, nullref was because constructionPlaylist
+		was empty, and it appears that the game code is assuming there is always a playlist
+	Fixed Nullref in SoundGui.cs when sted.ActivePlaylists was null
+	Added InstallChecker to validate correct installation (untested)
+
+
+
+The following changes were done using the ToolbarController, so it is not in
+this version:
+	Made left click open/close the player, right-click open the main gui
+	Protected click-through through the windows to the scene below using the
+		ClickThroughBlocker
+	Added ability to put the button on either the stock toolbar or Blizzy's
+		toolbar, using the ToolbarController

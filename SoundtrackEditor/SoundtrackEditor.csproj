@@ -55,6 +55,7 @@
     <Compile Include="EventManager.cs" />
     <Compile Include="Fader.cs" />
     <Compile Include="GuiUtils.cs" />
+    <Compile Include="InstallChecker.cs" />
     <Compile Include="MP3Import.cs" />
     <Compile Include="MPGImport.cs" />
     <Compile Include="Persistor.cs" />
