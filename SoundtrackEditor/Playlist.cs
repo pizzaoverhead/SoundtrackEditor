@@ -355,7 +355,7 @@ namespace SoundtrackEditor
                 // Body name
                 if (bodyName.Length > 0 && !bodyName.Equals(v.mainBody.name))
                 {
-                    //Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
+                    Utils.Log("Prereq failed: Expected bodyName " + bodyName + ", but was " + v.mainBody.name);
                     return false;
                 }
                 return true;
@@ -365,7 +365,7 @@ namespace SoundtrackEditor
             {
                 if ((v.situation & situation) != v.situation)
                 {
-                    //Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
+                    Utils.Log("Prereq failed: Expected situation " + situation + ", but was " + v.situation);
                     return false;
                 }
                 return true;

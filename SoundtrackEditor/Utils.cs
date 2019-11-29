@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 using System.IO;
+using System.Diagnostics;
 
 namespace SoundtrackEditor
 {
@@ -12,9 +10,10 @@ namespace SoundtrackEditor
         public static double KscLatitude = -0.0917535863160035;
         public static double KscLongitude = 285.37030688110428;
 
+        [ConditionalAttribute("DEBUG")]
         public static void Log(string message)
         {
-            Debug.Log("[STED] " + message);
+            UnityEngine.Debug.Log("[STED] " + message);
         }
 
         public static string AssemblyDirectory

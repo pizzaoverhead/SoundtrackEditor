@@ -281,6 +281,7 @@ namespace SoundtrackEditor
             // TODO: Check playlists and only add the events required.
 
             /*GameEvents.onActiveJointNeedUpdate.Add(onActiveJointNeedUpdate);
+            onJointBreak
             GameEvents.OnAppFocus
             GameEvents.onAsteroidSpawned*/
             GameEvents.OnCameraChange.Add(OnCameraChange);

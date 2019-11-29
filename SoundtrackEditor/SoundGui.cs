@@ -445,11 +445,21 @@ NullReferenceException: Object reference not set to an instance of an object
 
                 string label;
                 if (sted.CurrentPlaylist == playlists[i])
+                {
                     label = string.Format("<b>{0} ►</b>", playlistName);
-                else if (sted.ActivePlaylists.Contains(playlists[i]))
-                    label = string.Format("<b>{0} ☑</b>", playlistName);
+                }
                 else
+                {;
+                    if (sted.ActivePlaylists != null && sted.ActivePlaylists.Contains(playlists[i]))
+                    {
+                    label = string.Format("<b>{0} ☑</b>", playlistName);
+                    }
+                else
+                    {
                     label = string.Format("<b>{0}</b>", playlistName);
+                    }
+                }
+
                 GUILayout.Label(label);
 
                 GUILayout.FlexibleSpace();
